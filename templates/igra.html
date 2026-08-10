@@ -23,8 +23,16 @@
                 <span class="malenkiy-kod" id="kod">.....</span>
                 <span class="nomer-raunda" id="raund"></span>
             </div>
-            <div class="taymer taymer-skryt" id="taymer">45</div>
             <button class="knopka-vyhod" onclick="vyyti()">Выйти из игры</button>
+        </div>
+
+        <div class="obertka-taymera">
+            <div class="bolshoy-taymer" id="bolshoy-taymer">
+                <span class="taymer-podpis" id="taymer-podpis">Осталось</span>
+                <span class="taymer-cifry" id="taymer-cifry">45</span>
+                <span class="taymer-podpis">сек</span>
+                <div class="taymer-polosa" id="taymer-polosa"></div>
+            </div>
         </div>
 
         <div class="pole-igry">
@@ -76,6 +84,7 @@
         let rezhim_prosmotra = "prosmotr";
 
         let konec_vremeni = null;
+        let faza_taymera = "";
 
         async function obnovit() {
             const otvet = await fetch("/api/igra/" + kod);
@@ -96,6 +105,7 @@
                 konec_vremeni = null;
             } else {
                 konec_vremeni = Date.now() + d.ostalos * 1000;
+                faza_taymera = d.status;
             }
             narisovat_taymer();
 
@@ -106,19 +116,25 @@
         }
 
         function narisovat_taymer() {
-            const blok = document.getElementById("taymer");
+            const blok = document.getElementById("bolshoy-taymer");
 
             if (konec_vremeni === null) {
-                blok.className = "taymer taymer-skryt";
+                blok.className = "bolshoy-taymer";
                 return;
             }
 
-            let ostalos = Math.max(0, Math.ceil((konec_vremeni - Date.now()) / 1000));
-            blok.textContent = ostalos;
+            const ostalos = Math.max(0, Math.ceil((konec_vremeni - Date.now()) / 1000));
 
-            let klass = "taymer";
-            if (ostalos <= 10) { klass += " taymer-malo"; }
-            else if (ostalos <= 20) { klass += " taymer-skoro"; }
+            document.getElementById("taymer-cifry").textContent = ostalos;
+
+            document.getElementById("taymer-podpis").textContent =
+                faza_taymera === "golosovanie" ? "На голосование" : "На выбор карты";
+
+            document.getElementById("taymer-polosa").style.width = (ostalos / 45 * 100) + "%";
+
+            let klass = "bolshoy-taymer bolshoy-taymer-vidno";
+            if (ostalos <= 10) { klass += " taymer-krasnyy"; }
+            else if (ostalos <= 20) { klass += " taymer-zheltyy"; }
             blok.className = klass;
         }
 
@@ -214,13 +230,13 @@
                 html = "<div class='associaciya'>" + d.associaciya + "</div>";
                 if (d.ya_vedushiy) {
                     html += "<p class='podzagolovok'>Сдали: " + d.sdali + " из " + d.igroki.length +
-                            ". Кто не успеет за 45 секунд, пропустит раунд</p>";
+                            ". Кто не успеет, пропустит раунд</p>";
                 } else if (d.ya_sdal) {
                     html += "<p class='podzagolovok'>Ты сдал карточку. Сдали: " + d.sdali +
                             " из " + d.igroki.length + "</p>";
                 } else {
                     html += "<div class='tablichka-hodit'>Твой ход</div>" +
-                            "<p class='podzagolovok'>Выбери карточку под эту ассоциацию, пока идёт время</p>" +
+                            "<p class='podzagolovok'>Выбери карточку под эту ассоциацию</p>" +
                             "<button class='knopka knopka-glavnaya' onclick='sdat()'>Сдать карточку</button>";
                 }
             }
@@ -235,7 +251,7 @@
                             d.progolosovali + " из " + (d.igroki.length - 1) + "</p>";
                 } else {
                     html += "<div class='tablichka-hodit'>Твой ход</div>" +
-                            "<p class='podzagolovok'>Угадай карточку ведущего, пока идёт время</p>";
+                            "<p class='podzagolovok'>Угадай карточку ведущего</p>";
                 }
 
                 html += "<div class='setka-stola'>";

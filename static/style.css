@@ -1259,3 +1259,124 @@ h3 {
     body::before, .zvezdy, .planeta, .s-kolcami { animation: none; }
     .kometa, .sputnik, .stanciya { display: none; }
 }
+
+.igrok {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 14px;
+    text-align: left;
+}
+
+.levaya-igroka {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    min-width: 0;
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.znak {
+    flex-shrink: 0;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: bold;
+    line-height: 1;
+}
+
+.znak-da {
+    background: rgba(40, 110, 86, 0.9);
+    border: 2px solid #7ee8c0;
+    color: #b8ffe0;
+}
+
+.znak-net {
+    background: rgba(48, 34, 78, 0.9);
+    border: 2px solid rgba(160, 130, 240, 0.45);
+    color: #8b7fb8;
+}
+
+.bolshoy-taymer {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    background: rgba(14, 8, 34, 0.92);
+    border: 2px solid rgba(126, 232, 192, 0.5);
+    border-radius: 18px;
+    padding: 14px 26px;
+    margin: 0 auto;
+    max-width: 420px;
+    width: 100%;
+}
+
+.bolshoy-taymer-vidno { display: flex; }
+
+.taymer-podpis {
+    font-size: 14px;
+    color: #a99fd0;
+    letter-spacing: 1px;
+}
+
+.taymer-cifry {
+    font-size: 40px;
+    font-weight: bold;
+    color: #7ee8c0;
+    line-height: 1;
+    min-width: 62px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+}
+
+.taymer-polosa {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    height: 4px;
+    background: #7ee8c0;
+    border-radius: 0 0 16px 16px;
+    transition: width 1s linear, background 0.3s;
+}
+
+.obertka-taymera {
+    position: relative;
+    overflow: hidden;
+    border-radius: 18px;
+}
+
+.taymer-zheltyy { border-color: rgba(255, 196, 110, 0.6); }
+.taymer-zheltyy .taymer-cifry { color: #ffc46e; }
+.taymer-zheltyy .taymer-polosa { background: #ffc46e; }
+
+.taymer-krasnyy {
+    border-color: rgba(255, 138, 138, 0.8);
+    background: rgba(58, 14, 20, 0.92);
+}
+
+.taymer-krasnyy .taymer-cifry {
+    color: #ff8a8a;
+    animation: pulse-cifr 1s ease-in-out infinite;
+}
+
+.taymer-krasnyy .taymer-polosa { background: #ff8a8a; }
+
+@keyframes pulse-cifr {
+    0%, 100% { transform: scale(1); }
+    50%      { transform: scale(1.12); }
+}
+
+@media (max-width: 780px) {
+    .bolshoy-taymer { padding: 11px 18px; gap: 10px; }
+    .taymer-cifry { font-size: 32px; min-width: 50px; }
+    .taymer-podpis { font-size: 12px; }
+    .igrok { gap: 10px; }
+    .znak { width: 26px; height: 26px; font-size: 14px; }
+}
