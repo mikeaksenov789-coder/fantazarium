@@ -13,6 +13,7 @@ ALFAVIT = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
 
 OCHKOV_DLYA_POBEDY = 30
 SEKUND_NA_HOD = 45
+CENA_ZAMENY = 5
 
 
 def sozdat_tablicu():
@@ -98,6 +99,13 @@ def sozdat_tablicu_raundov():
             kod_komnaty TEXT NOT NULL,
             nomer_raunda INTEGER NOT NULL,
             login TEXT NOT NULL,
+            karta TEXT NOT NULL
+        )
+    """)
+    kursor.execute("""
+        CREATE TABLE IF NOT EXISTS sbrosy (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            kod_komnaty TEXT NOT NULL,
             karta TEXT NOT NULL
         )
     """)
@@ -219,8 +227,19 @@ def poluchit_igrokov(kod):
     return [{"login": s[0], "ochki": s[1], "gotov": s[2] == 1} for s in stroki]
 
 
+def poluchit_ochki_igroka(kod, login):
+    soedinenie = sqlite3.connect(BAZA)
+    kursor = soedinenie.cursor()
+    kursor.execute(
+        "SELECT ochki FROM uchastniki WHERE kod_komnaty = ? AND login = ?",
+        (kod, login)
+    )
+    stroka = kursor.fetchone()
+    soedinenie.close()
+    return stroka[0] if stroka else 0
+
+
 def pomenyat_gotovnost(kod, login):
-    """Переключает готовность игрока. Возвращает новое состояние."""
     soedinenie = sqlite3.connect(BAZA)
     kursor = soedinenie.cursor()
     kursor.execute(
@@ -369,6 +388,7 @@ def novaya_partiya(kod):
     kursor.execute("DELETE FROM raundy WHERE kod_komnaty = ?", (kod,))
     kursor.execute("DELETE FROM hody WHERE kod_komnaty = ?", (kod,))
     kursor.execute("DELETE FROM golosa WHERE kod_komnaty = ?", (kod,))
+    kursor.execute("DELETE FROM sbrosy WHERE kod_komnaty = ?", (kod,))
     soedinenie.commit()
     soedinenie.close()
 
@@ -390,12 +410,20 @@ def zanyatye_karty(kod):
     kursor.execute("SELECT karta FROM hody WHERE kod_komnaty = ?", (kod,))
     sygrannye = [s[0] for s in kursor.fetchall()]
 
+    kursor.execute("SELECT karta FROM sbrosy WHERE kod_komnaty = ?", (kod,))
+    sbroshennye = [s[0] for s in kursor.fetchall()]
+
     soedinenie.close()
-    return set(v_rukah + sygrannye)
+    return set(v_rukah + sygrannye + sbroshennye)
+
+
+def svobodnye_karty(kod):
+    zanyaty = zanyatye_karty(kod)
+    return [k for k in spisok_vseh_kart() if k not in zanyaty]
 
 
 def skolko_svobodnyh_kart(kod):
-    return len([k for k in spisok_vseh_kart() if k not in zanyatye_karty(kod)])
+    return len(svobodnye_karty(kod))
 
 
 def razdat_karty(kod):
@@ -427,7 +455,7 @@ def razdat_karty(kod):
 
 def dobrat_karty(kod):
     igroki = poluchit_igrokov(kod)
-    svobodnye = [k for k in spisok_vseh_kart() if k not in zanyatye_karty(kod)]
+    svobodnye = svobodnye_karty(kod)
     random.shuffle(svobodnye)
 
     soedinenie = sqlite3.connect(BAZA)
@@ -452,6 +480,57 @@ def dobrat_karty(kod):
 
     soedinenie.commit()
     soedinenie.close()
+
+
+def mozhno_zamenit(kod, login):
+    """Хватает ли очков и свободных карт для замены руки."""
+    if poluchit_ochki_igroka(kod, login) < CENA_ZAMENY:
+        return False
+
+    skolko_v_ruke = len(poluchit_ruku(kod, login))
+    if skolko_v_ruke == 0:
+        return False
+
+    return skolko_svobodnyh_kart(kod) >= skolko_v_ruke
+
+
+def zamenit_ruku(kod, login):
+    """Меняет все карты игрока на новые за 5 очков."""
+    if not mozhno_zamenit(kod, login):
+        return False
+
+    staraya_ruka = poluchit_ruku(kod, login)
+    svobodnye = svobodnye_karty(kod)
+    random.shuffle(svobodnye)
+
+    soedinenie = sqlite3.connect(BAZA)
+    kursor = soedinenie.cursor()
+
+    for karta in staraya_ruka:
+        kursor.execute(
+            "INSERT INTO sbrosy (kod_komnaty, karta) VALUES (?, ?)",
+            (kod, karta)
+        )
+
+    kursor.execute(
+        "DELETE FROM ruki WHERE kod_komnaty = ? AND login = ?",
+        (kod, login)
+    )
+
+    for i in range(len(staraya_ruka)):
+        kursor.execute(
+            "INSERT INTO ruki (kod_komnaty, login, karta) VALUES (?, ?, ?)",
+            (kod, login, svobodnye[i])
+        )
+
+    kursor.execute(
+        "UPDATE uchastniki SET ochki = ochki - ? WHERE kod_komnaty = ? AND login = ?",
+        (CENA_ZAMENY, kod, login)
+    )
+
+    soedinenie.commit()
+    soedinenie.close()
+    return True
 
 
 def poluchit_ruku(kod, login):
@@ -553,6 +632,21 @@ def poluchit_hody(kod, nomer):
     return [{"login": s[0], "karta": s[1]} for s in stroki]
 
 
+def kto_mozhet_golosovat(kod, nomer):
+    """Голосуют только те, кто успел сдать карту. Ведущий не голосует."""
+    raund = tekushiy_raund(kod)
+    if raund is None:
+        return []
+
+    hody = poluchit_hody(kod, nomer)
+    igroki = [i["login"] for i in poluchit_igrokov(kod)]
+
+    return [
+        h["login"] for h in hody
+        if h["login"] != raund["vedushiy"] and h["login"] in igroki
+    ]
+
+
 def sohranit_golos(kod, nomer, login, karta):
     soedinenie = sqlite3.connect(BAZA)
     kursor = soedinenie.cursor()
@@ -583,8 +677,9 @@ def poluchit_golosa(kod, nomer):
 
 def poschitat_ochki(kod, nomer):
     """
-    Очки получают только те, кто реально проголосовал.
-    Пропустившие ход остаются без очков.
+    Правила Фантазариума.
+    Если на столе всего две карты, оба сдавших получают по 2 очка.
+    В остальных случаях очки идут только тем, кто проголосовал.
     """
     raund = tekushiy_raund(kod)
     vedushiy = raund["vedushiy"]
@@ -594,10 +689,22 @@ def poschitat_ochki(kod, nomer):
     golosa = poluchit_golosa(kod, nomer)
     igroki = poluchit_igrokov(kod)
 
+    itog = {i["login"]: 0 for i in igroki}
+
+    if len(hody) <= 1:
+        return itog
+
+    if len(hody) == 2:
+        for hod in hody:
+            if hod["login"] in itog:
+                itog[hod["login"]] += 2
+        for login, ochki in itog.items():
+            if ochki > 0:
+                dobavit_ochki(kod, login, ochki)
+        return itog
+
     avtor_karty = {h["karta"]: h["login"] for h in hody}
     ugadali = [g["login"] for g in golosa if g["karta"] == karta_vedushego]
-
-    itog = {i["login"]: 0 for i in igroki}
     vsego_golosovalo = len(golosa)
 
     if vsego_golosovalo == 0:

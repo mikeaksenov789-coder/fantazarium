@@ -46,6 +46,7 @@
         <div class="moya-ruka" id="blok-ruki">
             <h3 class="zagolovok-ruki" id="zagolovok-ruki">Твои карточки</h3>
             <div class="setka-kart" id="karty"></div>
+            <div class="panel-zameny" id="panel-zameny"></div>
         </div>
 
         <div class="niz-panel" id="niz-panel"></div>
@@ -76,6 +77,7 @@
         let proshlye_karty = "";
         let proshlyy_niz = "";
         let proshlie_mesta = "";
+        let proshlaya_zamena = "";
         let posledniye_dannye = null;
 
         let modal_otkryt = false;
@@ -112,6 +114,7 @@
             narisovat_mesta(d);
             narisovat_stol(d);
             narisovat_karty(d);
+            narisovat_zamenu(d);
             narisovat_niz(d);
         }
 
@@ -126,10 +129,8 @@
             const ostalos = Math.max(0, Math.ceil((konec_vremeni - Date.now()) / 1000));
 
             document.getElementById("taymer-cifry").textContent = ostalos;
-
             document.getElementById("taymer-podpis").textContent =
                 faza_taymera === "golosovanie" ? "На голосование" : "На выбор карты";
-
             document.getElementById("taymer-polosa").style.width = (ostalos / 45 * 100) + "%";
 
             let klass = "bolshoy-taymer bolshoy-taymer-vidno";
@@ -230,25 +231,30 @@
                 html = "<div class='associaciya'>" + d.associaciya + "</div>";
                 if (d.ya_vedushiy) {
                     html += "<p class='podzagolovok'>Сдали: " + d.sdali + " из " + d.igroki.length +
-                            ". Кто не успеет, пропустит раунд</p>";
+                            ". Кто не успеет, пропустит раунд и не будет голосовать</p>";
                 } else if (d.ya_sdal) {
                     html += "<p class='podzagolovok'>Ты сдал карточку. Сдали: " + d.sdali +
                             " из " + d.igroki.length + "</p>";
                 } else {
                     html += "<div class='tablichka-hodit'>Твой ход</div>" +
-                            "<p class='podzagolovok'>Выбери карточку под эту ассоциацию</p>" +
+                            "<p class='podzagolovok'>Успей выбрать карточку, иначе пропустишь раунд</p>" +
                             "<button class='knopka knopka-glavnaya' onclick='sdat()'>Сдать карточку</button>";
                 }
             }
 
             else if (d.status === "golosovanie") {
                 html = "<div class='associaciya'>" + d.associaciya + "</div>";
+
                 if (d.ya_vedushiy) {
                     html += "<p class='podzagolovok'>Проголосовали: " + d.progolosovali +
-                            " из " + (d.igroki.length - 1) + "</p>";
+                            " из " + d.vsego_golosuet + "</p>";
+                } else if (!d.ya_mogu_golosovat) {
+                    html += "<div class='ne-golosuet'>Ты не успел сдать карточку, в этом раунде не голосуешь</div>" +
+                            "<p class='podzagolovok'>Проголосовали: " + d.progolosovali +
+                            " из " + d.vsego_golosuet + "</p>";
                 } else if (d.ya_golosoval) {
                     html += "<p class='podzagolovok'>Ты проголосовал. Проголосовали: " +
-                            d.progolosovali + " из " + (d.igroki.length - 1) + "</p>";
+                            d.progolosovali + " из " + d.vsego_golosuet + "</p>";
                 } else {
                     html += "<div class='tablichka-hodit'>Твой ход</div>" +
                             "<p class='podzagolovok'>Угадай карточку ведущего</p>";
@@ -330,6 +336,29 @@
             }
         }
 
+        function narisovat_zamenu(d) {
+            let html = "";
+
+            if (d.status === "associaciya" || d.status === "otvety") {
+                if (!d.ya_sdal) {
+                    html += "<span class='moi-ochki'>Твои очки: " + d.moi_ochki + "</span>";
+
+                    if (d.mogu_zamenit) {
+                        html += "<button class='knopka-zamena' onclick='zamenit()'>" +
+                                "Заменить все карточки за " + d.cena_zameny + " очков</button>";
+                    } else if (d.moi_ochki < d.cena_zameny) {
+                        html += "<span class='moi-ochki'>Замена карточек стоит " +
+                                d.cena_zameny + " очков</span>";
+                    }
+                }
+            }
+
+            if (html !== proshlaya_zamena) {
+                document.getElementById("panel-zameny").innerHTML = html;
+                proshlaya_zamena = html;
+            }
+        }
+
         function narisovat_niz(d) {
             let html = "";
 
@@ -349,6 +378,24 @@
             }
         }
 
+        async function zamenit() {
+            const d = posledniye_dannye;
+            if (!confirm("Заменить все карточки за " + d.cena_zameny + " очков?")) { return; }
+
+            const f = new FormData();
+            f.append("kod", kod);
+            const otvet = await fetch("/zamenit_karty", { method: "POST", body: f });
+            const rezultat = await otvet.json();
+
+            if (rezultat.oshibka) {
+                alert(rezultat.oshibka);
+            }
+
+            vybrannaya = null;
+            proshlye_karty = "";
+            obnovit();
+        }
+
         function otkryt_ruku(index) {
             const d = posledniye_dannye;
             spisok_prosmotra = [];
@@ -364,7 +411,7 @@
             const d = posledniye_dannye;
             spisok_prosmotra = [];
             for (const k of d.karty_na_stole) {
-                const mozhno = !k.moya && !d.ya_vedushiy && !d.ya_golosoval;
+                const mozhno = !k.moya && d.ya_mogu_golosovat && !d.ya_golosoval;
                 spisok_prosmotra.push({ fayl: k.karta, mozhno: mozhno });
             }
             rezhim_prosmotra = "golos";
