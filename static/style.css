@@ -465,6 +465,32 @@ h3 {
 
 .knopka-glavnaya:hover { background: linear-gradient(135deg, #fff0bd, #f5d98a); }
 
+.knopka-gotov {
+    background: linear-gradient(135deg, #4ec99a, #2e9c74);
+    color: #06231a;
+    border: 1px solid rgba(126, 232, 192, 0.9);
+    font-weight: bold;
+    box-shadow: 0 0 30px rgba(78, 201, 154, 0.4);
+}
+
+.knopka-gotov:hover {
+    background: linear-gradient(135deg, #6de0b4, #4ec99a);
+    box-shadow: 0 0 42px rgba(78, 201, 154, 0.6);
+}
+
+.knopka-otmena-gotov {
+    background: rgba(30, 70, 58, 0.7);
+    color: #9df0cc;
+    border: 1px solid rgba(126, 232, 192, 0.55);
+    font-weight: normal;
+    box-shadow: none;
+}
+
+.knopka-otmena-gotov:hover {
+    background: rgba(44, 96, 80, 0.85);
+    border-color: rgba(126, 232, 192, 0.8);
+}
+
 .forma {
     display: flex;
     flex-direction: column;
@@ -666,12 +692,24 @@ h3 {
 .spisok-igrokov { display: flex; flex-direction: column; gap: 9px; margin-bottom: 20px; }
 
 .igrok {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
     background: rgba(20, 12, 45, 0.85);
     border: 1px solid rgba(160, 130, 240, 0.28);
     border-radius: 14px;
     padding: 14px 18px;
     font-size: 17px;
+    transition: border-color 0.2s, background 0.2s;
 }
+
+.igrok-gotov {
+    border-color: rgba(126, 232, 192, 0.6);
+    background: rgba(24, 56, 46, 0.6);
+}
+
+.levaya-igroka { display: flex; align-items: center; gap: 8px; }
 
 .metka-hozyain {
     font-size: 12px;
@@ -679,8 +717,20 @@ h3 {
     background: linear-gradient(135deg, #f5d98a, #e0b04a);
     padding: 3px 11px;
     border-radius: 20px;
-    margin-left: 9px;
     vertical-align: middle;
+}
+
+.status-gotov {
+    font-size: 13px;
+    color: #7ee8c0;
+    font-weight: bold;
+    white-space: nowrap;
+}
+
+.status-ne-gotov {
+    font-size: 13px;
+    color: #7d72ab;
+    white-space: nowrap;
 }
 
 .podskazka { color: #a99fd0; margin-bottom: 20px; font-size: 16px; }
@@ -723,6 +773,38 @@ h3 {
 }
 
 .nomer-raunda { font-size: 15px; color: #a99fd0; }
+
+.taymer {
+    font-size: 17px;
+    font-weight: bold;
+    color: #7ee8c0;
+    padding: 6px 16px;
+    border-radius: 10px;
+    background: rgba(20, 12, 45, 0.8);
+    border: 1px solid rgba(126, 232, 192, 0.4);
+    min-width: 62px;
+    text-align: center;
+    transition: color 0.2s, border-color 0.2s, background 0.2s;
+}
+
+.taymer-skoro {
+    color: #ffc46e;
+    border-color: rgba(255, 196, 110, 0.55);
+}
+
+.taymer-malo {
+    color: #ff8a8a;
+    border-color: rgba(255, 138, 138, 0.7);
+    background: rgba(76, 20, 20, 0.6);
+    animation: taymer-trevoga 1s ease-in-out infinite;
+}
+
+@keyframes taymer-trevoga {
+    0%, 100% { transform: scale(1); }
+    50%      { transform: scale(1.08); }
+}
+
+.taymer-skryt { display: none; }
 
 .knopka-vyhod {
     padding: 9px 20px;
@@ -1118,6 +1200,7 @@ h3 {
     .malenkiy-kod { font-size: 17px; letter-spacing: 3px; }
     .nomer-raunda { font-size: 13px; }
     .knopka-vyhod { padding: 7px 14px; font-size: 12px; }
+    .taymer { font-size: 15px; padding: 5px 12px; min-width: 54px; }
 
     .pole-igry { padding: 4px 0; }
 
@@ -1149,6 +1232,9 @@ h3 {
     .ryad-prosmotra { gap: 6px; }
     .strelka { width: 42px; height: 42px; font-size: 21px; }
     .modal-karta { max-width: calc(100vw - 130px); max-height: 62vh; }
+
+    .igrok { font-size: 15px; padding: 12px 14px; }
+    .status-gotov, .status-ne-gotov { font-size: 12px; }
 
     .gazoviy { width: 110px; height: 110px; right: -42px; }
     .ledyanoy { width: 70px; height: 70px; left: -26px; }

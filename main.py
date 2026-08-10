@@ -14,6 +14,53 @@ database.sozdat_tablicu_kart()
 database.sozdat_tablicu_raundov()
 
 
+def zakonchit_raund(kod):
+    raund = database.tekushiy_raund(kod)
+    database.poschitat_ochki(kod, raund["nomer"])
+    database.sbrosit_taymer(kod)
+    database.sbrosit_gotovnost(kod)
+
+    if database.est_pobeditel(kod) or not database.hvatit_kart(kod):
+        database.izmenit_status(kod, "konec")
+    else:
+        database.izmenit_status(kod, "itogi")
+
+
+def zapustit_sleduyushiy_raund(kod):
+    raund = database.tekushiy_raund(kod)
+    database.dobrat_karty(kod)
+    database.nachat_raund(kod, raund["nomer"] + 1)
+    database.sbrosit_gotovnost(kod)
+    database.sbrosit_taymer(kod)
+    database.izmenit_status(kod, "associaciya")
+
+
+def proverit_vremya(kod):
+    status = database.poluchit_status(kod)
+
+    if status not in ("otvety", "golosovanie"):
+        return
+
+    if not database.vremya_vyshlo(kod):
+        return
+
+    raund = database.tekushiy_raund(kod)
+    if raund is None:
+        return
+
+    if status == "otvety":
+        hody = database.poluchit_hody(kod, raund["nomer"])
+
+        if len(hody) < 2:
+            zakonchit_raund(kod)
+        else:
+            database.izmenit_status(kod, "golosovanie")
+            database.zapustit_taymer(kod)
+
+    elif status == "golosovanie":
+        zakonchit_raund(kod)
+
+
 @app.get("/")
 def glavnaya():
     return FileResponse("templates/index.html")
@@ -106,6 +153,25 @@ def voyti_v_komnatu(kod: str = Form(), login: str = Cookie(default=None)):
     return RedirectResponse("/komnata/" + kod, status_code=303)
 
 
+@app.post("/gotovnost")
+def gotovnost(kod: str = Form(), login: str = Cookie(default=None)):
+    """Игрок нажал Готов. Работает и в комнате, и на экране итогов."""
+    if login is None:
+        return JSONResponse({"oshibka": "Не авторизован"})
+
+    status = database.poluchit_status(kod)
+
+    if status not in ("ozhidanie", "itogi"):
+        return JSONResponse({"oshibka": "Сейчас нельзя"})
+
+    database.pomenyat_gotovnost(kod, login)
+
+    if status == "itogi" and database.vse_gotovy(kod):
+        zapustit_sleduyushiy_raund(kod)
+
+    return JSONResponse({"ok": True})
+
+
 @app.post("/nachat_igru")
 def nachat_igru(kod: str = Form(), login: str = Cookie(default=None)):
     if login is None:
@@ -117,8 +183,13 @@ def nachat_igru(kod: str = Form(), login: str = Cookie(default=None)):
     if len(database.poluchit_igrokov(kod)) < 4:
         return RedirectResponse("/komnata/" + kod, status_code=303)
 
+    if not database.vse_gotovy(kod):
+        return RedirectResponse("/komnata/" + kod, status_code=303)
+
     database.razdat_karty(kod)
     database.nachat_raund(kod, 1)
+    database.sbrosit_gotovnost(kod)
+    database.sbrosit_taymer(kod)
     database.izmenit_status(kod, "associaciya")
 
     return RedirectResponse("/igra/" + kod, status_code=303)
@@ -147,19 +218,22 @@ def zagadat(
     database.sohranit_hod(kod, raund["nomer"], login, karta)
     database.ubrat_kartu_iz_ruki(kod, login, karta)
     database.izmenit_status(kod, "otvety")
+    database.zapustit_taymer(kod)
 
     return JSONResponse({"ok": True})
 
 
 @app.post("/sdat_kartu")
 def sdat_kartu(kod: str = Form(), karta: str = Form(), login: str = Cookie(default=None)):
+    proverit_vremya(kod)
+
     raund = database.tekushiy_raund(kod)
 
     if raund is None or raund["vedushiy"] == login:
         return JSONResponse({"oshibka": "Ведущий уже сходил"})
 
     if database.poluchit_status(kod) != "otvety":
-        return JSONResponse({"oshibka": "Сейчас не время сдавать карту"})
+        return JSONResponse({"oshibka": "Время вышло"})
 
     database.sohranit_hod(kod, raund["nomer"], login, karta)
     database.ubrat_kartu_iz_ruki(kod, login, karta)
@@ -169,19 +243,22 @@ def sdat_kartu(kod: str = Form(), karta: str = Form(), login: str = Cookie(defau
 
     if len(hody) >= len(igroki):
         database.izmenit_status(kod, "golosovanie")
+        database.zapustit_taymer(kod)
 
     return JSONResponse({"ok": True})
 
 
 @app.post("/golosovat")
 def golosovat(kod: str = Form(), karta: str = Form(), login: str = Cookie(default=None)):
+    proverit_vremya(kod)
+
     raund = database.tekushiy_raund(kod)
 
     if raund is None or raund["vedushiy"] == login:
         return JSONResponse({"oshibka": "Ведущий не голосует"})
 
     if database.poluchit_status(kod) != "golosovanie":
-        return JSONResponse({"oshibka": "Сейчас не время голосовать"})
+        return JSONResponse({"oshibka": "Время вышло"})
 
     hody = database.poluchit_hody(kod, raund["nomer"])
     for hod in hody:
@@ -194,28 +271,7 @@ def golosovat(kod: str = Form(), karta: str = Form(), login: str = Cookie(defaul
     igroki = database.poluchit_igrokov(kod)
 
     if len(golosa) >= len(igroki) - 1:
-        database.poschitat_ochki(kod, raund["nomer"])
-
-        if database.est_pobeditel(kod) or not database.hvatit_kart(kod):
-            database.izmenit_status(kod, "konec")
-        else:
-            database.izmenit_status(kod, "itogi")
-
-    return JSONResponse({"ok": True})
-
-
-@app.post("/sleduyushiy_raund")
-def sleduyushiy_raund(kod: str = Form(), login: str = Cookie(default=None)):
-    if login != database.poluchit_hozyaina(kod):
-        return JSONResponse({"oshibka": "Только хозяин может начать раунд"})
-
-    if database.poluchit_status(kod) != "itogi":
-        return JSONResponse({"oshibka": "Раунд ещё не закончен"})
-
-    raund = database.tekushiy_raund(kod)
-    database.dobrat_karty(kod)
-    database.nachat_raund(kod, raund["nomer"] + 1)
-    database.izmenit_status(kod, "associaciya")
+        zakonchit_raund(kod)
 
     return JSONResponse({"ok": True})
 
@@ -242,6 +298,7 @@ def vyyti_iz_igry(kod: str = Form(), login: str = Cookie(default=None)):
     status = database.poluchit_status(kod)
 
     if len(igroki) < 4 and status not in ("ozhidanie", "konec"):
+        database.sbrosit_taymer(kod)
         database.izmenit_status(kod, "konec")
         return JSONResponse({"ok": True})
 
@@ -253,12 +310,16 @@ def vyyti_iz_igry(kod: str = Form(), login: str = Cookie(default=None)):
         hody = database.poluchit_hody(kod, raund["nomer"])
         if len(hody) >= len(igroki):
             database.izmenit_status(kod, "golosovanie")
+            database.zapustit_taymer(kod)
 
     elif status == "golosovanie":
         golosa = database.poluchit_golosa(kod, raund["nomer"])
         if len(golosa) >= len(igroki) - 1:
-            database.poschitat_ochki(kod, raund["nomer"])
-            database.izmenit_status(kod, "itogi")
+            zakonchit_raund(kod)
+
+    elif status == "itogi":
+        if database.vse_gotovy(kod):
+            zapustit_sleduyushiy_raund(kod)
 
     return JSONResponse({"ok": True})
 
@@ -278,6 +339,7 @@ def propustit_igroka(kod: str = Form(), kogo: str = Form(), login: str = Cookie(
     raund = database.tekushiy_raund(kod)
 
     if len(igroki) < 4 and status not in ("ozhidanie", "konec"):
+        database.sbrosit_taymer(kod)
         database.izmenit_status(kod, "konec")
         return JSONResponse({"ok": True})
 
@@ -285,6 +347,7 @@ def propustit_igroka(kod: str = Form(), kogo: str = Form(), login: str = Cookie(
         return JSONResponse({"ok": True})
 
     if raund["vedushiy"] == kogo and status in ("associaciya", "otvety"):
+        database.sbrosit_taymer(kod)
         database.izmenit_status(kod, "associaciya")
         return JSONResponse({"ok": True})
 
@@ -292,12 +355,16 @@ def propustit_igroka(kod: str = Form(), kogo: str = Form(), login: str = Cookie(
         hody = database.poluchit_hody(kod, raund["nomer"])
         if len(hody) >= len(igroki):
             database.izmenit_status(kod, "golosovanie")
+            database.zapustit_taymer(kod)
 
     elif status == "golosovanie":
         golosa = database.poluchit_golosa(kod, raund["nomer"])
         if len(golosa) >= len(igroki) - 1:
-            database.poschitat_ochki(kod, raund["nomer"])
-            database.izmenit_status(kod, "itogi")
+            zakonchit_raund(kod)
+
+    elif status == "itogi":
+        if database.vse_gotovy(kod):
+            zapustit_sleduyushiy_raund(kod)
 
     return JSONResponse({"ok": True})
 
@@ -307,12 +374,21 @@ def dannye_komnaty(kod: str, login: str = Cookie(default=None)):
     if not database.komnata_sushestvuet(kod):
         return JSONResponse({"oshibka": "Комната не найдена"})
 
+    igroki = database.poluchit_igrokov(kod)
+    ya_gotov = False
+    for igrok in igroki:
+        if igrok["login"] == login:
+            ya_gotov = igrok["gotov"]
+
     return JSONResponse({
         "kod": kod,
-        "igroki": database.poluchit_igrokov(kod),
+        "igroki": igroki,
         "hozyain": database.poluchit_hozyaina(kod),
         "status": database.poluchit_status(kod),
-        "ya": login
+        "ya": login,
+        "ya_gotov": ya_gotov,
+        "gotovyh": database.skolko_gotovyh(kod),
+        "vse_gotovy": database.vse_gotovy(kod)
     })
 
 
@@ -321,17 +397,28 @@ def dannye_igry(kod: str, login: str = Cookie(default=None)):
     if not database.komnata_sushestvuet(kod):
         return JSONResponse({"oshibka": "Комната не найдена"})
 
+    proverit_vremya(kod)
+
     raund = database.tekushiy_raund(kod)
     status = database.poluchit_status(kod)
+    igroki = database.poluchit_igrokov(kod)
+
+    ya_gotov = False
+    for igrok in igroki:
+        if igrok["login"] == login:
+            ya_gotov = igrok["gotov"]
 
     otvet = {
         "kod": kod,
         "status": status,
-        "igroki": database.poluchit_igrokov(kod),
+        "igroki": igroki,
         "moi_karty": database.poluchit_ruku(kod, login),
         "ya": login,
         "hozyain": database.poluchit_hozyaina(kod),
         "porog": database.OCHKOV_DLYA_POBEDY,
+        "ostalos": database.ostalos_sekund(kod),
+        "ya_gotov": ya_gotov,
+        "gotovyh": database.skolko_gotovyh(kod),
         "nomer_raunda": raund["nomer"] if raund else 0,
         "vedushiy": raund["vedushiy"] if raund else None,
         "ya_vedushiy": raund["vedushiy"] == login if raund else False,
@@ -347,6 +434,7 @@ def dannye_igry(kod: str, login: str = Cookie(default=None)):
         otvet["progolosovali"] = 0
         otvet["itogi"] = []
         otvet["zhdem"] = []
+        otvet["ostalos"] = None
         return JSONResponse(otvet)
 
     otvet["tablica"] = []
@@ -374,13 +462,15 @@ def dannye_igry(kod: str, login: str = Cookie(default=None)):
         zhdem = [raund["vedushiy"]]
     elif status == "otvety":
         sdali_loginy = [h["login"] for h in hody]
-        zhdem = [i["login"] for i in otvet["igroki"] if i["login"] not in sdali_loginy]
+        zhdem = [i["login"] for i in igroki if i["login"] not in sdali_loginy]
     elif status == "golosovanie":
         golosovali = [g["login"] for g in golosa]
         zhdem = [
-            i["login"] for i in otvet["igroki"]
+            i["login"] for i in igroki
             if i["login"] not in golosovali and i["login"] != raund["vedushiy"]
         ]
+    elif status == "itogi":
+        zhdem = [i["login"] for i in igroki if not i["gotov"]]
     otvet["zhdem"] = zhdem
 
     if status in ("golosovanie", "itogi"):

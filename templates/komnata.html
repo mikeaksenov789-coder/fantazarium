@@ -39,11 +39,11 @@
 
         <p class="podskazka" id="podskazka"></p>
 
-        <div id="mesto-knopki"></div>
+        <div class="knopki" id="mesto-knopki"></div>
 
         <div class="blok-info">
             <h4>Пока ждём</h4>
-            <p>Отправь друзьям код или прямую ссылку на эту страницу. Игра начнётся, когда хозяин комнаты нажмёт кнопку старта. Войти в уже начавшуюся партию нельзя.</p>
+            <p>Отправь друзьям код или прямую ссылку на эту страницу. Каждый игрок должен нажать кнопку Готов. Когда готовы все и собралось минимум четыре человека, хозяин комнаты запускает партию.</p>
         </div>
 
         <a href="/lobbi" class="ssylka-nazad">Выйти</a>
@@ -79,9 +79,17 @@
 
             let html = "";
             for (const igrok of d.igroki) {
-                html += "<div class='igrok'>" + igrok.login;
+                const klass = igrok.gotov ? "igrok igrok-gotov" : "igrok";
+                html += "<div class='" + klass + "'>";
+                html += "<span class='levaya-igroka'>" + igrok.login;
                 if (igrok.login === d.hozyain) {
                     html += "<span class='metka-hozyain'>хозяин</span>";
+                }
+                html += "</span>";
+                if (igrok.gotov) {
+                    html += "<span class='status-gotov'>готов</span>";
+                } else {
+                    html += "<span class='status-ne-gotov'>ждём</span>";
                 }
                 html += "</div>";
             }
@@ -96,21 +104,39 @@
             if (skolko < 4) {
                 podskazka.textContent = "Нужно минимум 4 игрока. Сейчас: " + skolko;
                 podskazka.className = "podskazka";
+            } else if (!d.vse_gotovy) {
+                podskazka.textContent = "Готовы " + d.gotovyh + " из " + skolko;
+                podskazka.className = "podskazka";
             } else {
-                podskazka.textContent = "Можно начинать! Игроков: " + skolko;
+                podskazka.textContent = "Все готовы! Можно начинать";
                 podskazka.className = "podskazka podskazka-gotovo";
             }
 
             let knopka = "";
-            if (d.ya === d.hozyain && skolko >= 4) {
-                knopka = "<form method='post' action='/nachat_igru'>" +
-                         "<input type='hidden' name='kod' value='" + kod + "'>" +
-                         "<button type='submit' class='knopka knopka-glavnaya'>Начать игру</button></form>";
+
+            if (d.ya_gotov) {
+                knopka += "<button class='knopka knopka-otmena-gotov' onclick='gotovnost()'>Я не готов</button>";
+            } else {
+                knopka += "<button class='knopka knopka-gotov' onclick='gotovnost()'>Готов</button>";
             }
+
+            if (d.ya === d.hozyain && skolko >= 4 && d.vse_gotovy) {
+                knopka += "<form method='post' action='/nachat_igru'>" +
+                          "<input type='hidden' name='kod' value='" + kod + "'>" +
+                          "<button type='submit' class='knopka knopka-glavnaya'>Начать игру</button></form>";
+            }
+
             if (knopka !== proshlaya_knopka) {
                 document.getElementById("mesto-knopki").innerHTML = knopka;
                 proshlaya_knopka = knopka;
             }
+        }
+
+        async function gotovnost() {
+            const f = new FormData();
+            f.append("kod", kod);
+            await fetch("/gotovnost", { method: "POST", body: f });
+            obnovit();
         }
 
         obnovit();

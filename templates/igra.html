@@ -23,6 +23,7 @@
                 <span class="malenkiy-kod" id="kod">.....</span>
                 <span class="nomer-raunda" id="raund"></span>
             </div>
+            <div class="taymer taymer-skryt" id="taymer">45</div>
             <button class="knopka-vyhod" onclick="vyyti()">Выйти из игры</button>
         </div>
 
@@ -67,12 +68,14 @@
         let proshlye_karty = "";
         let proshlyy_niz = "";
         let proshlie_mesta = "";
+        let posledniye_dannye = null;
 
         let modal_otkryt = false;
         let spisok_prosmotra = [];
         let tekushiy_index = 0;
         let rezhim_prosmotra = "prosmotr";
-        let mozhno_deystvie = false;
+
+        let konec_vremeni = null;
 
         async function obnovit() {
             const otvet = await fetch("/api/igra/" + kod);
@@ -84,13 +87,39 @@
                 return;
             }
 
+            posledniye_dannye = d;
+
             document.getElementById("raund").textContent =
                 d.status === "konec" ? "Партия окончена" : "Раунд " + d.nomer_raunda;
+
+            if (d.ostalos === null || d.ostalos === undefined) {
+                konec_vremeni = null;
+            } else {
+                konec_vremeni = Date.now() + d.ostalos * 1000;
+            }
+            narisovat_taymer();
 
             narisovat_mesta(d);
             narisovat_stol(d);
             narisovat_karty(d);
             narisovat_niz(d);
+        }
+
+        function narisovat_taymer() {
+            const blok = document.getElementById("taymer");
+
+            if (konec_vremeni === null) {
+                blok.className = "taymer taymer-skryt";
+                return;
+            }
+
+            let ostalos = Math.max(0, Math.ceil((konec_vremeni - Date.now()) / 1000));
+            blok.textContent = ostalos;
+
+            let klass = "taymer";
+            if (ostalos <= 10) { klass += " taymer-malo"; }
+            else if (ostalos <= 20) { klass += " taymer-skoro"; }
+            blok.className = klass;
         }
 
         function narisovat_mesta(d) {
@@ -109,7 +138,15 @@
 
                 if (igrok.login === d.ya) { klass += " mesto-ya"; }
 
-                if (igrok.login === d.vedushiy) {
+                if (d.status === "itogi") {
+                    if (igrok.gotov) {
+                        klass += " mesto-gotov";
+                        bejdzh = "<div class='bejdzh bejdzh-gotov'>ГОТОВ</div>";
+                    } else {
+                        klass += " mesto-zhdem";
+                        bejdzh = "<div class='bejdzh bejdzh-zhdem'>ЖДЁМ</div>";
+                    }
+                } else if (igrok.login === d.vedushiy) {
                     klass += " mesto-vedushiy";
                     bejdzh = "<div class='bejdzh bejdzh-hodit'>ВЕДУЩИЙ</div>";
                 } else if (d.zhdem.indexOf(igrok.login) !== -1) {
@@ -176,13 +213,14 @@
             else if (d.status === "otvety") {
                 html = "<div class='associaciya'>" + d.associaciya + "</div>";
                 if (d.ya_vedushiy) {
-                    html += "<p class='podzagolovok'>Сдали: " + d.sdali + " из " + d.igroki.length + "</p>";
+                    html += "<p class='podzagolovok'>Сдали: " + d.sdali + " из " + d.igroki.length +
+                            ". Кто не успеет за 45 секунд, пропустит раунд</p>";
                 } else if (d.ya_sdal) {
                     html += "<p class='podzagolovok'>Ты сдал карточку. Сдали: " + d.sdali +
                             " из " + d.igroki.length + "</p>";
                 } else {
                     html += "<div class='tablichka-hodit'>Твой ход</div>" +
-                            "<p class='podzagolovok'>Выбери карточку под эту ассоциацию</p>" +
+                            "<p class='podzagolovok'>Выбери карточку под эту ассоциацию, пока идёт время</p>" +
                             "<button class='knopka knopka-glavnaya' onclick='sdat()'>Сдать карточку</button>";
                 }
             }
@@ -197,7 +235,7 @@
                             d.progolosovali + " из " + (d.igroki.length - 1) + "</p>";
                 } else {
                     html += "<div class='tablichka-hodit'>Твой ход</div>" +
-                            "<p class='podzagolovok'>Угадай карточку ведущего</p>";
+                            "<p class='podzagolovok'>Угадай карточку ведущего, пока идёт время</p>";
                 }
 
                 html += "<div class='setka-stola'>";
@@ -227,12 +265,14 @@
                     }
                     html += "</div>";
                 }
-                html += "</div>";
+                html += "</div><br>";
 
-                if (d.ya === d.hozyain) {
-                    html += "<br><button class='knopka knopka-glavnaya' onclick='sleduyushiy()'>Следующий раунд</button>";
+                html += "<p class='podzagolovok'>Готовы " + d.gotovyh + " из " + d.igroki.length + "</p>";
+
+                if (d.ya_gotov) {
+                    html += "<button class='knopka knopka-otmena-gotov' onclick='gotovnost()'>Я не готов</button>";
                 } else {
-                    html += "<p class='podzagolovok'>Ждём хозяина комнаты...</p>";
+                    html += "<button class='knopka knopka-gotov' onclick='gotovnost()'>Готов к следующему раунду</button>";
                 }
             }
 
@@ -240,11 +280,7 @@
                 document.getElementById("stol").innerHTML = html;
                 proshlyy_stol = html;
             }
-
-            posledniye_dannye = d;
         }
-
-        let posledniye_dannye = null;
 
         function narisovat_karty(d) {
             const blok = document.getElementById("blok-ruki");
@@ -281,7 +317,8 @@
         function narisovat_niz(d) {
             let html = "";
 
-            if (d.status !== "konec" && d.ya === d.hozyain && d.zhdem.length > 0) {
+            if (d.ya === d.hozyain && d.zhdem.length > 0 &&
+                (d.status === "associaciya" || d.status === "itogi")) {
                 for (const kogo of d.zhdem) {
                     if (kogo !== d.ya) {
                         html += "<button class='knopka-malenkaya knopka-opasnaya' onclick='propustit(\"" +
@@ -395,6 +432,13 @@
             obnovit();
         }
 
+        async function gotovnost() {
+            const f = new FormData();
+            f.append("kod", kod);
+            await fetch("/gotovnost", { method: "POST", body: f });
+            obnovit();
+        }
+
         async function zagadat() {
             const pole = document.getElementById("pole-associacii");
             const text = pole.value.trim();
@@ -416,14 +460,6 @@
             f.append("kod", kod);
             f.append("karta", vybrannaya);
             await fetch("/sdat_kartu", { method: "POST", body: f });
-            vybrannaya = null;
-            obnovit();
-        }
-
-        async function sleduyushiy() {
-            const f = new FormData();
-            f.append("kod", kod);
-            await fetch("/sleduyushiy_raund", { method: "POST", body: f });
             vybrannaya = null;
             obnovit();
         }
@@ -476,6 +512,7 @@
 
         obnovit();
         setInterval(obnovit, 2000);
+        setInterval(narisovat_taymer, 1000);
     </script>
 
 </body>
