@@ -80,21 +80,25 @@
             let html = "";
             for (const igrok of d.igroki) {
                 const klass = igrok.gotov ? "igrok igrok-gotov" : "igrok";
-                const znak = igrok.gotov
-                    ? "<span class='znak znak-da'>✓</span>"
-                    : "<span class='znak znak-net'>✕</span>";
 
                 html += "<div class='" + klass + "'>";
-                html += "<span class='levaya-igroka'>" + znak + "<span>" + igrok.login + "</span>";
+
+                html += "<div class='levaya-igroka'>";
+                html += "<span class='imya-v-spiske'>" + igrok.login + "</span>";
                 if (igrok.login === d.hozyain) {
                     html += "<span class='metka-hozyain'>хозяин</span>";
                 }
-                html += "</span>";
-                html += igrok.gotov
-                    ? "<span class='status-gotov'>готов</span>"
-                    : "<span class='status-ne-gotov'>ждём</span>";
+                html += "</div>";
+
+                if (igrok.gotov) {
+                    html += "<div class='plashka-status plashka-gotov'>готов</div>";
+                } else {
+                    html += "<div class='plashka-status plashka-zhdem'>не готов</div>";
+                }
+
                 html += "</div>";
             }
+
             if (html !== proshlyy_spisok) {
                 document.getElementById("spisok").innerHTML = html;
                 proshlyy_spisok = html;
