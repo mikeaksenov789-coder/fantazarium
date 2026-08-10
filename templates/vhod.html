@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вход — Фантазариум</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+    <div class="container">
+        <h2>Вход в игру</h2>
+
+        <div class="soobshenie" id="soobshenie"></div>
+
+        <form class="forma" method="post" action="/vhod">
+            <input type="text" name="login" placeholder="Логин" class="pole" required autocomplete="username">
+            <input type="password" name="parol" placeholder="Пароль" class="pole" required autocomplete="current-password">
+            <button type="submit" class="knopka knopka-glavnaya">Войти</button>
+        </form>
+
+        <a href="/registraciya" class="ssylka-nazad">Ещё нет аккаунта? Зарегистрируйся</a>
+    </div>
+
+    <script>
+        const parametry = new URLSearchParams(window.location.search);
+        if (parametry.get("oshibka") === "1") {
+            const blok = document.getElementById("soobshenie");
+            blok.textContent = "Неверный логин или пароль";
+            blok.className = "soobshenie soobshenie-vidno";
+        }
+    </script>
+
+</body>
+</html>

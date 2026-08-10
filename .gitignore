@@ -1,0 +1,11 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.env
+*.db
+node_modules/
+dist/
+ngrok.exe
+cloudflared.exe

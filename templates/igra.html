@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Игра — Фантазариум</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+    <div class="igrovoy-ekran">
+
+        <div class="verh-panel">
+            <span class="malenkiy-kod" id="kod">.....</span>
+            <span class="nomer-raunda" id="raund"></span>
+            <span class="schet" id="schet"></span>
+        </div>
+
+        <div class="stol" id="stol">
+            <p>Загрузка...</p>
+        </div>
+
+        <div class="moya-ruka" id="blok-ruki">
+            <h3 class="zagolovok-ruki" id="zagolovok-ruki">Твои карточки</h3>
+            <div class="setka-kart" id="karty"></div>
+        </div>
+
+        <div class="niz-panel" id="niz-panel"></div>
+
+    </div>
+
+    <div class="modal" id="modal">
+        <div class="modal-fon" onclick="zakryt_modal()"></div>
+        <div class="modal-okno">
+            <img class="modal-karta" id="modal-karta" src="">
+            <div class="modal-knopki" id="modal-knopki"></div>
+        </div>
+    </div>
+
+    <script>
+        const kod = window.location.pathname.split("/").pop();
+        document.getElementById("kod").textContent = kod;
+
+        let vybrannaya = null;
+        let mozhno_vybirat = false;
+        let proshlyy_stol = "";
+        let proshlye_karty = "";
+        let proshlyy_niz = "";
+        let modal_otkryt = false;
+
+        async function obnovit() {
+            const otvet = await fetch("/api/igra/" + kod);
+            const d = await otvet.json();
+            if (d.oshibka) { return; }
+
+            if (d.status === "ozhidanie") {
+                window.location.href = "/komnata/" + kod;
+                return;
+            }
+
+            document.getElementById("raund").textContent =
+                d.status === "konec" ? "Партия окончена" : "Раунд " + d.nomer_raunda;
+
+            let schet = "";
+            for (const igrok of d.igroki) {
+                schet += igrok.login + ": " + igrok.ochki + "   ";
+            }
+            document.getElementById("schet").textContent = schet;
+
+            narisovat_stol(d);
+            narisovat_karty(d);
+            narisovat_niz(d);
+        }
+
+        function narisovat_stol(d) {
+            let html = "";
+
+            if (d.status === "konec") {
+                html = "<h3 class='zagolovok-stola'>Партия окончена</h3><div class='pedestal'>";
+                for (const igrok of d.tablica) {
+                    let klass = "stroka-itoga";
+                    let medal = "";
+                    if (igrok.mesto === 1) { klass += " pobeditel"; medal = "🏆 "; }
+                    else if (igrok.mesto === 2) { medal = "🥈 "; }
+                    else if (igrok.mesto === 3) { medal = "🥉 "; }
+                    html += "<div class='" + klass + "'><span>" + medal + igrok.mesto +
+                            ". " + igrok.login + "</span><span class='ochki-itog'>" +
+                            igrok.ochki + "</span></div>";
+                }
+                html += "</div>";
+
+                if (d.ya === d.hozyain) {
+                    html += "<button class='knopka knopka-glavnaya' onclick='igrat_snova()'>Играть снова</button>";
+                } else {
+                    html += "<p class='podzagolovok'>Хозяин может начать новую партию</p>";
+                }
+                html += "<br><a href='/lobbi' class='ssylka-nazad'>Выйти в лобби</a>";
+            }
+
+            else if (d.status === "associaciya") {
+                if (d.ya_vedushiy) {
+                    html = "<h3 class='zagolovok-stola'>Ты ведущий</h3>" +
+                        "<p class='podzagolovok'>Выбери карточку и придумай к ней ассоциацию</p>" +
+                        "<input type='text' id='pole-associacii' class='pole' placeholder='Ассоциация' maxlength='80'>" +
+                        "<br><br><button class='knopka knopka-glavnaya' onclick='zagadat()'>Загадать</button>";
+                } else {
+                    html = "<h3 class='zagolovok-stola'>Ведущий: " + d.vedushiy + "</h3>" +
+                        "<p class='podzagolovok'>Придумывает ассоциацию...</p>";
+                }
+            }
+
+            else if (d.status === "otvety") {
+                html = "<div class='associaciya'>" + d.associaciya + "</div>";
+                if (d.ya_vedushiy) {
+                    html += "<p class='podzagolovok'>Сдали: " + d.sdali + " из " + d.igroki.length + "</p>";
+                } else if (d.ya_sdal) {
+                    html += "<p class='podzagolovok'>Ты сдал карточку. Сдали: " + d.sdali +
+                            " из " + d.igroki.length + "</p>";
+                } else {
+                    html += "<p class='podzagolovok'>Выбери карточку под эту ассоциацию</p>" +
+                            "<button class='knopka knopka-glavnaya' onclick='sdat()'>Сдать карточку</button>";
+                }
+            }
+
+            else if (d.status === "golosovanie") {
+                html = "<div class='associaciya'>" + d.associaciya + "</div>";
+                if (d.ya_vedushiy) {
+                    html += "<p class='podzagolovok'>Проголосовали: " + d.progolosovali +
+                            " из " + (d.igroki.length - 1) + "</p>";
+                } else if (d.ya_golosoval) {
+                    html += "<p class='podzagolovok'>Ты проголосовал. Проголосовали: " +
+                            d.progolosovali + " из " + (d.igroki.length - 1) + "</p>";
+                } else {
+                    html += "<p class='podzagolovok'>Нажми на карточку, чтобы рассмотреть и проголосовать</p>";
+                }
+
+                html += "<div class='setka-stola'>";
+                for (const k of d.karty_na_stole) {
+                    let klass = "karta-stola";
+                    let mozhno_golos = "0";
+                    if (k.moya) {
+                        klass += " karta-moya";
+                    } else if (!d.ya_vedushiy && !d.ya_golosoval) {
+                        mozhno_golos = "1";
+                    }
+                    html += "<img src='/static/cards/" + k.karta + "' class='" + klass +
+                            "' onclick='otkryt_modal(\"" + k.karta + "\", \"golos\", " + mozhno_golos + ")'>";
+                }
+                html += "</div>";
+            }
+
+            else if (d.status === "itogi") {
+                html = "<h3 class='zagolovok-stola'>Итоги раунда</h3>" +
+                       "<div class='associaciya'>" + d.associaciya + "</div><div class='setka-stola'>";
+                for (const k of d.itogi) {
+                    let klass = "karta-stola";
+                    if (k.eto_vedushego) { klass += " karta-pravilnaya"; }
+                    html += "<div class='blok-itoga'><img src='/static/cards/" + k.karta +
+                            "' class='" + klass + "' onclick='otkryt_modal(\"" + k.karta +
+                            "\", \"prosmotr\", 0)'><div class='avtor'>" + k.avtor +
+                            (k.eto_vedushego ? " ★" : "") + "</div>";
+                    if (k.golosovali.length > 0) {
+                        html += "<div class='golosa'>" + k.golosovali.join(", ") + "</div>";
+                    }
+                    html += "</div>";
+                }
+                html += "</div>";
+
+                if (d.ya === d.hozyain) {
+                    html += "<br><button class='knopka knopka-glavnaya' onclick='sleduyushiy()'>Следующий раунд</button>";
+                } else {
+                    html += "<p class='podzagolovok'>Ждём хозяина комнаты...</p>";
+                }
+            }
+
+            if (html !== proshlyy_stol) {
+                document.getElementById("stol").innerHTML = html;
+                proshlyy_stol = html;
+            }
+        }
+
+        function narisovat_karty(d) {
+            const blok = document.getElementById("blok-ruki");
+
+            if (d.status === "golosovanie" || d.status === "itogi" || d.status === "konec") {
+                blok.style.display = "none";
+                return;
+            }
+            blok.style.display = "block";
+
+            mozhno_vybirat =
+                (d.status === "associaciya" && d.ya_vedushiy) ||
+                (d.status === "otvety" && !d.ya_vedushiy && !d.ya_sdal);
+
+            document.getElementById("zagolovok-ruki").textContent =
+                mozhno_vybirat ? "Твои карточки — нажми, чтобы рассмотреть и выбрать" : "Твои карточки";
+
+            let html = "";
+            for (const karta of d.moi_karty) {
+                let klass = "karta";
+                if (karta === vybrannaya) { klass += " karta-vybrana"; }
+                if (!mozhno_vybirat) { klass += " karta-neaktivna"; }
+                html += "<img src='/static/cards/" + karta + "' class='" + klass +
+                        "' onclick='otkryt_modal(\"" + karta + "\", \"vybor\", " +
+                        (mozhno_vybirat ? "1" : "0") + ")'>";
+            }
+
+            if (html !== proshlye_karty) {
+                document.getElementById("karty").innerHTML = html;
+                proshlye_karty = html;
+            }
+        }
+
+        function narisovat_niz(d) {
+            let html = "";
+
+            if (d.status !== "konec") {
+                html += "<button class='knopka-malenkaya' onclick='vyyti()'>Выйти из игры</button>";
+                if (d.ya === d.hozyain && d.zhdem.length > 0) {
+                    for (const kogo of d.zhdem) {
+                        if (kogo !== d.ya) {
+                            html += "<button class='knopka-malenkaya knopka-opasnaya' onclick='propustit(\"" +
+                                    kogo + "\")'>Исключить " + kogo + "</button>";
+                        }
+                    }
+                }
+            }
+
+            if (html !== proshlyy_niz) {
+                document.getElementById("niz-panel").innerHTML = html;
+                proshlyy_niz = html;
+            }
+        }
+
+        function otkryt_modal(karta, rezhim, mozhno) {
+            document.getElementById("modal-karta").src = "/static/cards/" + karta;
+
+            let knopki = "";
+            if (rezhim === "vybor" && mozhno === 1) {
+                knopki = "<button class='knopka knopka-glavnaya' onclick='podtverdit_vybor(\"" +
+                         karta + "\")'>Выбрать эту</button>";
+            } else if (rezhim === "golos" && mozhno === 1) {
+                knopki = "<button class='knopka knopka-glavnaya' onclick='podtverdit_golos(\"" +
+                         karta + "\")'>Голосовать за неё</button>";
+            }
+            knopki += "<button class='knopka' onclick='zakryt_modal()'>Закрыть</button>";
+
+            document.getElementById("modal-knopki").innerHTML = knopki;
+            document.getElementById("modal").className = "modal modal-vidno";
+            modal_otkryt = true;
+        }
+
+        function zakryt_modal() {
+            document.getElementById("modal").className = "modal";
+            modal_otkryt = false;
+        }
+
+        function podtverdit_vybor(karta) {
+            vybrannaya = karta;
+            proshlye_karty = "";
+            zakryt_modal();
+            obnovit();
+        }
+
+        async function podtverdit_golos(karta) {
+            zakryt_modal();
+            const f = new FormData();
+            f.append("kod", kod);
+            f.append("karta", karta);
+            await fetch("/golosovat", { method: "POST", body: f });
+            obnovit();
+        }
+
+        async function zagadat() {
+            const pole = document.getElementById("pole-associacii");
+            const text = pole.value.trim();
+            if (vybrannaya === null) { alert("Сначала выбери карточку"); return; }
+            if (text.length === 0) { alert("Напиши ассоциацию"); return; }
+
+            const f = new FormData();
+            f.append("kod", kod);
+            f.append("karta", vybrannaya);
+            f.append("associaciya", text);
+            await fetch("/zagadat", { method: "POST", body: f });
+            vybrannaya = null;
+            obnovit();
+        }
+
+        async function sdat() {
+            if (vybrannaya === null) { alert("Сначала выбери карточку"); return; }
+            const f = new FormData();
+            f.append("kod", kod);
+            f.append("karta", vybrannaya);
+            await fetch("/sdat_kartu", { method: "POST", body: f });
+            vybrannaya = null;
+            obnovit();
+        }
+
+        async function sleduyushiy() {
+            const f = new FormData();
+            f.append("kod", kod);
+            await fetch("/sleduyushiy_raund", { method: "POST", body: f });
+            vybrannaya = null;
+            obnovit();
+        }
+
+        async function igrat_snova() {
+            const f = new FormData();
+            f.append("kod", kod);
+            await fetch("/igrat_snova", { method: "POST", body: f });
+            window.location.href = "/komnata/" + kod;
+        }
+
+        async function vyyti() {
+            if (!confirm("Точно выйти из игры?")) { return; }
+            const f = new FormData();
+            f.append("kod", kod);
+            await fetch("/vyyti_iz_igry", { method: "POST", body: f });
+            window.location.href = "/lobbi";
+        }
+
+        async function propustit(kogo) {
+            if (!confirm("Исключить игрока " + kogo + "?")) { return; }
+            const f = new FormData();
+            f.append("kod", kod);
+            f.append("kogo", kogo);
+            await fetch("/propustit_igroka", { method: "POST", body: f });
+            obnovit();
+        }
+
+        document.addEventListener("keydown", function (e) {
+            if (e.key === "Escape" && modal_otkryt) { zakryt_modal(); }
+        });
+
+        obnovit();
+        setInterval(obnovit, 2000);
+    </script>
+
+</body>
+</html>

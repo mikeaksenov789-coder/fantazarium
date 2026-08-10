@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Лобби — Фантазариум</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+    <div class="container">
+        <h2>Игровое лобби</h2>
+
+        <div class="soobshenie" id="soobshenie"></div>
+
+        <form method="post" action="/sozdat_komnatu">
+            <button type="submit" class="knopka knopka-glavnaya">Создать комнату</button>
+        </form>
+
+        <p class="podzagolovok" style="margin: 30px 0 20px;">или</p>
+
+        <form class="forma" method="post" action="/voyti_v_komnatu">
+            <input type="text" name="kod" placeholder="Код комнаты" class="pole" required maxlength="5">
+            <button type="submit" class="knopka">Войти по коду</button>
+        </form>
+
+        <a href="/" class="ssylka-nazad">На главную</a>
+    </div>
+
+    <script>
+        const parametry = new URLSearchParams(window.location.search);
+        const oshibka = parametry.get("oshibka");
+        const blok = document.getElementById("soobshenie");
+
+        if (oshibka === "net") {
+            blok.textContent = "Комната с таким кодом не найдена. Проверь код.";
+            blok.className = "soobshenie soobshenie-vidno";
+        } else if (oshibka === "idet") {
+            blok.textContent = "В этой комнате игра уже началась.";
+            blok.className = "soobshenie soobshenie-vidno";
+        }
+    </script>
+
+</body>
+</html>
