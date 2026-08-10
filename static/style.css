@@ -73,6 +73,190 @@ body::after {
     to   { background-position: 480px 300px, -620px 400px, 540px -350px, -700px 500px; }
 }
 
+.kosmos {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+.planeta {
+    position: absolute;
+    border-radius: 50%;
+}
+
+.planeta-1 {
+    width: 210px;
+    height: 210px;
+    right: -75px;
+    top: 6%;
+    opacity: 0.34;
+    background: radial-gradient(circle at 32% 28%, #9a7ae0, #4a2f8f 55%, #1d1140 100%);
+    box-shadow: 0 0 95px rgba(126, 92, 214, 0.5);
+    animation: plyv 70s linear infinite;
+}
+
+.planeta-2 {
+    width: 125px;
+    height: 125px;
+    left: -48px;
+    bottom: 12%;
+    opacity: 0.32;
+    background: radial-gradient(circle at 68% 34%, #6fc8d8, #2a6b8f 55%, #12283f 100%);
+    box-shadow: 0 0 72px rgba(56, 160, 200, 0.45);
+    animation: plyv 95s linear infinite reverse;
+}
+
+.planeta-3 {
+    width: 92px;
+    height: 92px;
+    left: 8%;
+    top: 12%;
+    opacity: 0.28;
+    background: radial-gradient(circle at 30% 30%, #ffb87a, #d4622e 52%, #5a2410 100%);
+    box-shadow: 0 0 58px rgba(220, 120, 60, 0.4);
+    animation: plyv 58s linear infinite;
+}
+
+.planeta-4 {
+    width: 62px;
+    height: 62px;
+    right: 14%;
+    bottom: 18%;
+    opacity: 0.3;
+    background: radial-gradient(circle at 36% 30%, #f0a8d8, #a03e8c 55%, #3c1236 100%);
+    box-shadow: 0 0 46px rgba(200, 80, 160, 0.42);
+    animation: plyv 82s linear infinite reverse;
+}
+
+.planeta-5 {
+    width: 48px;
+    height: 48px;
+    left: 40%;
+    top: 5%;
+    opacity: 0.26;
+    background: radial-gradient(circle at 34% 32%, #b8f0d0, #3e9c76 55%, #113828 100%);
+    box-shadow: 0 0 38px rgba(80, 200, 150, 0.38);
+    animation: plyv 66s linear infinite;
+}
+
+.planeta-koltso {
+    position: absolute;
+    right: 6%;
+    top: 44%;
+    width: 86px;
+    height: 86px;
+    opacity: 0.3;
+    border-radius: 50%;
+    background: radial-gradient(circle at 34% 30%, #ffe4a8, #c99a3e 55%, #4a3410 100%);
+    box-shadow: 0 0 54px rgba(220, 180, 90, 0.4);
+    animation: plyv 76s linear infinite reverse;
+}
+
+.planeta-koltso::after {
+    content: "";
+    position: absolute;
+    left: -34%;
+    top: 38%;
+    width: 168%;
+    height: 26%;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 228, 168, 0.55);
+    transform: rotate(-18deg);
+}
+
+@keyframes plyv {
+    0%   { transform: translateY(0) rotate(0deg); }
+    50%  { transform: translateY(-26px) rotate(180deg); }
+    100% { transform: translateY(0) rotate(360deg); }
+}
+
+.luna {
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 32%, #f0eeff, #8f89b8);
+    box-shadow: 0 0 18px rgba(220, 216, 255, 0.7);
+    opacity: 0.5;
+}
+
+.luna-1 {
+    right: 10%;
+    top: 20%;
+    animation: orbita 16s linear infinite;
+}
+
+.luna-2 {
+    left: 12%;
+    bottom: 24%;
+    animation: orbita 22s linear infinite reverse;
+}
+
+@keyframes orbita {
+    from { transform: rotate(0deg) translateX(72px) rotate(0deg); }
+    to   { transform: rotate(360deg) translateX(72px) rotate(-360deg); }
+}
+
+.kometa {
+    position: absolute;
+    width: 3px;
+    height: 3px;
+    background: #fff;
+    border-radius: 50%;
+    box-shadow: 0 0 8px 2px rgba(255, 255, 255, 0.9);
+}
+
+.kometa::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    right: 3px;
+    width: 92px;
+    height: 1.5px;
+    transform: translateY(-50%);
+    background: linear-gradient(to left, rgba(255, 255, 255, 0.85), transparent);
+}
+
+.kometa-1 { top: 10%; left: -10%; animation: polet 11s linear infinite; }
+.kometa-2 { top: 54%; left: -10%; animation: polet 17s linear infinite 5s; }
+.kometa-3 { top: 76%; left: -10%; animation: polet 14s linear infinite 9s; }
+.kometa-4 { top: 32%; left: -10%; animation: polet 20s linear infinite 14s; }
+
+@keyframes polet {
+    0%   { transform: translate(0, 0); opacity: 0; }
+    8%   { opacity: 1; }
+    82%  { opacity: 1; }
+    100% { transform: translate(125vw, 26vh); opacity: 0; }
+}
+
+.korabl {
+    position: absolute;
+    font-size: 22px;
+    line-height: 1;
+    opacity: 0.55;
+    filter: drop-shadow(0 0 12px rgba(160, 200, 255, 0.7));
+}
+
+.korabl-1 { top: 24%; left: -8%; animation: rejs-vpravo 44s linear infinite; }
+.korabl-2 { top: 66%; left: -8%; animation: rejs-vlevo 58s linear infinite 12s; }
+.korabl-3 { top: 44%; left: -8%; animation: rejs-vpravo 72s linear infinite 26s; }
+
+@keyframes rejs-vpravo {
+    0%   { transform: translate(0, 0) rotate(8deg); opacity: 0; }
+    10%  { opacity: 0.55; }
+    88%  { opacity: 0.55; }
+    100% { transform: translate(122vw, -14vh) rotate(8deg); opacity: 0; }
+}
+
+@keyframes rejs-vlevo {
+    0%   { transform: translate(0, 0) scaleX(-1) rotate(-6deg); opacity: 0; }
+    10%  { opacity: 0.5; }
+    88%  { opacity: 0.5; }
+    100% { transform: translate(122vw, 12vh) scaleX(-1) rotate(-6deg); opacity: 0; }
+}
+
 .container {
     text-align: center;
     max-width: 560px;
@@ -87,10 +271,18 @@ body::after {
     to   { opacity: 1; transform: translateY(0); }
 }
 
+.nadzagolovok {
+    font-size: 13px;
+    letter-spacing: 6px;
+    text-transform: uppercase;
+    color: #7d72ab;
+    margin-bottom: 10px;
+}
+
 .logo {
     font-size: clamp(40px, 12vw, 76px);
     letter-spacing: 4px;
-    margin-bottom: 4px;
+    margin-bottom: 6px;
     font-weight: normal;
     background: linear-gradient(120deg, #ffe9a8 0%, #f5c76e 22%, #ffffff 46%, #c9a3ff 68%, #7cc6ff 88%, #ffe9a8 100%);
     background-size: 260% auto;
@@ -108,7 +300,7 @@ body::after {
 .podzagolovok {
     font-size: clamp(15px, 4vw, 19px);
     color: #a99fd0;
-    margin-bottom: 42px;
+    margin-bottom: 34px;
     font-style: italic;
     letter-spacing: 0.5px;
 }
@@ -149,8 +341,6 @@ h3 {
     min-width: 230px;
     max-width: 100%;
     backdrop-filter: blur(8px);
-    position: relative;
-    overflow: hidden;
 }
 
 .knopka:hover {
@@ -160,9 +350,7 @@ h3 {
     box-shadow: 0 8px 30px rgba(126, 92, 214, 0.35);
 }
 
-.knopka:active {
-    transform: translateY(-1px);
-}
+.knopka:active { transform: translateY(-1px); }
 
 .knopka-glavnaya {
     background: linear-gradient(135deg, #f5d98a, #e0b04a);
@@ -200,9 +388,7 @@ h3 {
     backdrop-filter: blur(8px);
 }
 
-.pole::placeholder {
-    color: #7d72ab;
-}
+.pole::placeholder { color: #7d72ab; }
 
 .pole:focus {
     border-color: rgba(245, 217, 138, 0.8);
@@ -222,13 +408,8 @@ h3 {
     box-shadow: 0 12px 46px rgba(0, 0, 0, 0.45);
 }
 
-.pravila-text p {
-    margin-bottom: 13px;
-}
-
-.pravila-text b {
-    color: #f5d98a;
-}
+.pravila-text p { margin-bottom: 13px; }
+.pravila-text b { color: #f5d98a; }
 
 .ssylka-nazad {
     display: inline-block;
@@ -245,15 +426,13 @@ h3 {
 }
 
 .nizhniy-text {
-    margin-top: 54px;
+    margin-top: 48px;
     color: #574d80;
     font-size: 13px;
     letter-spacing: 1px;
 }
 
-.soobshenie {
-    display: none;
-}
+.soobshenie { display: none; }
 
 .soobshenie-vidno {
     display: block;
@@ -266,6 +445,137 @@ h3 {
     font-size: 15px;
     backdrop-filter: blur(8px);
     animation: poyavlenie 0.35s ease;
+}
+
+.opisanie {
+    display: flex;
+    justify-content: center;
+    gap: clamp(18px, 7vw, 50px);
+    margin-top: 46px;
+    padding-top: 28px;
+    border-top: 1px solid rgba(160, 130, 240, 0.18);
+}
+
+.punkt {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.cifra {
+    font-size: clamp(24px, 7vw, 32px);
+    color: #f5d98a;
+    text-shadow: 0 0 24px rgba(245, 217, 138, 0.4);
+}
+
+.podpis {
+    font-size: 12px;
+    color: #7d72ab;
+    letter-spacing: 1px;
+}
+
+.kak-igraem {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 44px;
+    text-align: left;
+}
+
+.shag {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    background: rgba(20, 12, 45, 0.45);
+    border: 1px solid rgba(160, 130, 240, 0.2);
+    border-radius: 14px;
+    padding: 14px 18px;
+    backdrop-filter: blur(8px);
+    transition: border-color 0.25s, transform 0.25s;
+}
+
+.shag:hover {
+    border-color: rgba(190, 160, 255, 0.45);
+    transform: translateX(4px);
+}
+
+.shag-nomer {
+    flex-shrink: 0;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: rgba(126, 92, 214, 0.25);
+    border: 1px solid rgba(245, 217, 138, 0.4);
+    color: #f5d98a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+}
+
+.shag-text {
+    font-size: 15px;
+    color: #b8aed8;
+}
+
+.lenta-kart {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 34px;
+}
+
+.mini-karta {
+    width: 62px;
+    aspect-ratio: 2 / 3;
+    border-radius: 8px;
+    border: 1px solid rgba(160, 130, 240, 0.3);
+    background: linear-gradient(150deg, rgba(126, 92, 214, 0.3), rgba(20, 12, 45, 0.8));
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+    animation: kachanie 5s ease-in-out infinite;
+}
+
+.mini-karta:nth-child(1) { transform: rotate(-9deg); animation-delay: 0s; }
+.mini-karta:nth-child(2) { transform: rotate(-4deg); animation-delay: 0.4s; }
+.mini-karta:nth-child(3) { transform: rotate(0deg);  animation-delay: 0.8s; }
+.mini-karta:nth-child(4) { transform: rotate(4deg);  animation-delay: 1.2s; }
+.mini-karta:nth-child(5) { transform: rotate(9deg);  animation-delay: 1.6s; }
+
+@keyframes kachanie {
+    0%, 100% { translate: 0 0; }
+    50%      { translate: 0 -8px; }
+}
+
+.podskazka-nizu {
+    margin-top: 32px;
+    font-size: 14px;
+    color: #7d72ab;
+    font-style: italic;
+    line-height: 1.7;
+}
+
+.blok-info {
+    background: rgba(20, 12, 45, 0.42);
+    border: 1px solid rgba(160, 130, 240, 0.2);
+    border-radius: 16px;
+    padding: 20px 22px;
+    margin-top: 26px;
+    backdrop-filter: blur(8px);
+    text-align: left;
+}
+
+.blok-info h4 {
+    font-size: 15px;
+    color: #f5d98a;
+    font-weight: normal;
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+}
+
+.blok-info p {
+    font-size: 14px;
+    color: #9a90c4;
+    line-height: 1.7;
 }
 
 .kod-komnaty {
@@ -329,9 +639,7 @@ h3 {
     transition: border-color 0.24s;
 }
 
-.igrok:hover {
-    border-color: rgba(190, 160, 255, 0.5);
-}
+.igrok:hover { border-color: rgba(190, 160, 255, 0.5); }
 
 .metka-hozyain {
     font-size: 12px;
@@ -693,45 +1001,24 @@ h3 {
     .knopka { min-width: 200px; padding: 14px 28px; }
     #pole-associacii { width: 100%; max-width: 320px; }
     .modal-karta { max-width: 88vw; max-height: 64vh; }
+
+    .planeta-1 { width: 130px; height: 130px; right: -55px; }
+    .planeta-2 { width: 80px; height: 80px; left: -32px; }
+    .planeta-3 { width: 58px; height: 58px; }
+    .planeta-4 { width: 42px; height: 42px; }
+    .planeta-5 { display: none; }
+    .planeta-koltso { width: 56px; height: 56px; }
+    .luna { display: none; }
+    .korabl { font-size: 17px; }
+    .mini-karta { width: 46px; }
+    .kometa::after { width: 60px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-    body::before, body::after, .logo, .kod-komnaty, .karta-pravilnaya, .pobeditel {
+    body::before, body::after, .logo, .kod-komnaty,
+    .karta-pravilnaya, .pobeditel, .planeta, .planeta-koltso,
+    .luna, .mini-karta {
         animation: none;
     }
-}
-
-.nadzagolovok {
-    font-size: 13px;
-    letter-spacing: 6px;
-    text-transform: uppercase;
-    color: #7d72ab;
-    margin-bottom: 10px;
-}
-
-.opisanie {
-    display: flex;
-    justify-content: center;
-    gap: clamp(20px, 8vw, 54px);
-    margin-top: 56px;
-    padding-top: 30px;
-    border-top: 1px solid rgba(160, 130, 240, 0.18);
-}
-
-.punkt {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.cifra {
-    font-size: clamp(24px, 7vw, 32px);
-    color: #f5d98a;
-    text-shadow: 0 0 24px rgba(245, 217, 138, 0.4);
-}
-
-.podpis {
-    font-size: 12px;
-    color: #7d72ab;
-    letter-spacing: 1px;
+    .kometa, .korabl { display: none; }
 }

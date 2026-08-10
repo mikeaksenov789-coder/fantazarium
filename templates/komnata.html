@@ -3,12 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Комната — Фантазариум</title>
+    <title>Комната - Фантазариум</title>
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
 
+    <div class="kosmos">
+        <div class="planeta planeta-2"></div>
+        <div class="planeta planeta-3"></div>
+        <div class="planeta planeta-4"></div>
+        <div class="luna luna-1"></div>
+        <div class="kometa kometa-1"></div>
+        <div class="kometa kometa-2"></div>
+        <div class="korabl korabl-1">🛸</div>
+        <div class="korabl korabl-3">🛰️</div>
+    </div>
+
     <div class="container">
+        <p class="nadzagolovok">зал ожидания</p>
         <h2>Комната</h2>
 
         <div class="kod-komnaty" id="kod">.....</div>
@@ -23,6 +35,11 @@
         <p class="podskazka" id="podskazka"></p>
 
         <div id="mesto-knopki"></div>
+
+        <div class="blok-info">
+            <h4>Пока ждём</h4>
+            <p>Отправь друзьям код или прямую ссылку на эту страницу. Игра начнётся, когда хозяин комнаты нажмёт кнопку старта. Войти в уже начавшуюся партию нельзя.</p>
+        </div>
 
         <a href="/lobbi" class="ssylka-nazad">Выйти</a>
     </div>

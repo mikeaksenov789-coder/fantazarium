@@ -3,10 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Игра — Фантазариум</title>
+    <title>Игра - Фантазариум</title>
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
+
+    <div class="kosmos">
+        <div class="planeta planeta-1"></div>
+        <div class="planeta planeta-2"></div>
+        <div class="planeta planeta-4"></div>
+        <div class="planeta-koltso"></div>
+        <div class="kometa kometa-2"></div>
+        <div class="kometa kometa-4"></div>
+        <div class="korabl korabl-3">🛰️</div>
+    </div>
 
     <div class="igrovoy-ekran">
 
@@ -193,7 +203,7 @@
                 (d.status === "otvety" && !d.ya_vedushiy && !d.ya_sdal);
 
             document.getElementById("zagolovok-ruki").textContent =
-                mozhno_vybirat ? "Твои карточки — нажми, чтобы рассмотреть и выбрать" : "Твои карточки";
+                mozhno_vybirat ? "Твои карточки, нажми чтобы рассмотреть" : "Твои карточки";
 
             let html = "";
             for (const karta of d.moi_karty) {

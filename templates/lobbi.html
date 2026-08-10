@@ -3,12 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Лобби — Фантазариум</title>
+    <title>Лобби - Фантазариум</title>
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
 
+    <div class="kosmos">
+        <div class="planeta planeta-1"></div>
+        <div class="planeta planeta-2"></div>
+        <div class="planeta planeta-5"></div>
+        <div class="planeta-koltso"></div>
+        <div class="luna luna-2"></div>
+        <div class="kometa kometa-1"></div>
+        <div class="kometa kometa-3"></div>
+        <div class="korabl korabl-1">🛸</div>
+    </div>
+
     <div class="container">
+        <p class="nadzagolovok">выбери путь</p>
         <h2>Игровое лобби</h2>
 
         <div class="soobshenie" id="soobshenie"></div>
@@ -17,12 +29,22 @@
             <button type="submit" class="knopka knopka-glavnaya">Создать комнату</button>
         </form>
 
-        <p class="podzagolovok" style="margin: 30px 0 20px;">или</p>
+        <p class="podzagolovok" style="margin: 24px 0 16px;">или</p>
 
         <form class="forma" method="post" action="/voyti_v_komnatu">
             <input type="text" name="kod" placeholder="Код комнаты" class="pole" required maxlength="5">
             <button type="submit" class="knopka">Войти по коду</button>
         </form>
+
+        <div class="blok-info">
+            <h4>Если создаёшь комнату</h4>
+            <p>Ты станешь хозяином. Получишь код из пяти символов, отправь его друзьям. Когда соберётся минимум четыре человека, появится кнопка старта.</p>
+        </div>
+
+        <div class="blok-info">
+            <h4>Если входишь по коду</h4>
+            <p>Введи код, который тебе прислали. Регистр не важен, буквы можно писать маленькими. В коде нет символов O, I, 0 и 1, чтобы их нельзя было перепутать.</p>
+        </div>
 
         <a href="/" class="ssylka-nazad">На главную</a>
     </div>

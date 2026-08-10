@@ -3,12 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Регистрация — Фантазариум</title>
+    <title>Регистрация - Фантазариум</title>
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
 
+    <div class="kosmos">
+        <div class="planeta planeta-1"></div>
+        <div class="planeta planeta-4"></div>
+        <div class="planeta planeta-5"></div>
+        <div class="luna luna-1"></div>
+        <div class="kometa kometa-2"></div>
+        <div class="kometa kometa-3"></div>
+        <div class="korabl korabl-2">🚀</div>
+    </div>
+
     <div class="container">
+        <p class="nadzagolovok">создай героя</p>
         <h2>Регистрация</h2>
 
         <div class="soobshenie" id="soobshenie"></div>
@@ -20,6 +31,13 @@
         </form>
 
         <a href="/vhod" class="ssylka-nazad">У меня уже есть аккаунт</a>
+
+        <div class="blok-info">
+            <h4>О безопасности</h4>
+            <p>Пароль не хранится в открытом виде. Он превращается в хеш, из которого невозможно восстановить исходный пароль. Даже владелец сайта его не видит.</p>
+        </div>
+
+        <p class="podskazka-nizu">Логин увидят другие игроки в комнате.</p>
     </div>
 
     <script>
