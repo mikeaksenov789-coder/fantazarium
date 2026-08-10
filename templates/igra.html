@@ -14,28 +14,24 @@
         <div class="planeta gazoviy"></div>
         <div class="planeta ledyanoy"></div>
         <div class="kometa kometa-2"></div>
-        <div class="sputnik sputnik-1">
-            <div class="panel panel-l"></div>
-            <div class="korpus"></div>
-            <div class="antenna"></div>
-            <div class="panel panel-r"></div>
-        </div>
     </div>
 
     <div class="igrovoy-ekran">
 
         <div class="verh-panel">
-            <span class="malenkiy-kod" id="kod">.....</span>
-            <span class="nomer-raunda" id="raund"></span>
-            <span class="schet" id="schet"></span>
+            <div class="levaya-chast">
+                <span class="malenkiy-kod" id="kod">.....</span>
+                <span class="nomer-raunda" id="raund"></span>
+            </div>
+            <button class="knopka-vyhod" onclick="vyyti()">Выйти из игры</button>
         </div>
 
         <div class="pole-igry">
-            <div class="stol-krug" id="stol-krug">
-                <div class="stol-centr" id="stol">
-                    <p>Загрузка...</p>
-                </div>
-            </div>
+            <div class="stol-krug" id="stol-krug"></div>
+        </div>
+
+        <div class="stol" id="stol">
+            <p>Загрузка...</p>
         </div>
 
         <div class="moya-ruka" id="blok-ruki">
@@ -50,7 +46,13 @@
     <div class="modal" id="modal">
         <div class="modal-fon" onclick="zakryt_modal()"></div>
         <div class="modal-okno">
-            <img class="modal-karta" id="modal-karta" src="">
+            <div class="ryad-prosmotra">
+                <button class="strelka" onclick="listat(-1)">‹</button>
+                <img class="modal-karta" id="modal-karta" src="">
+                <button class="strelka" onclick="listat(1)">›</button>
+            </div>
+            <div class="schetchik-kart" id="schetchik"></div>
+            <div class="tochki-kart" id="tochki"></div>
             <div class="modal-knopki" id="modal-knopki"></div>
         </div>
     </div>
@@ -65,7 +67,12 @@
         let proshlye_karty = "";
         let proshlyy_niz = "";
         let proshlie_mesta = "";
+
         let modal_otkryt = false;
+        let spisok_prosmotra = [];
+        let tekushiy_index = 0;
+        let rezhim_prosmotra = "prosmotr";
+        let mozhno_deystvie = false;
 
         async function obnovit() {
             const otvet = await fetch("/api/igra/" + kod);
@@ -80,12 +87,6 @@
             document.getElementById("raund").textContent =
                 d.status === "konec" ? "Партия окончена" : "Раунд " + d.nomer_raunda;
 
-            let schet = "";
-            for (const igrok of d.igroki) {
-                schet += igrok.login + ": " + igrok.ochki + "   ";
-            }
-            document.getElementById("schet").textContent = schet;
-
             narisovat_mesta(d);
             narisovat_stol(d);
             narisovat_karty(d);
@@ -93,7 +94,6 @@
         }
 
         function narisovat_mesta(d) {
-            const krug = document.getElementById("stol-krug");
             const vsego = d.igroki.length;
             let html = "";
 
@@ -101,30 +101,37 @@
                 const igrok = d.igroki[i];
 
                 const ugol = (i / vsego) * 2 * Math.PI - Math.PI / 2;
-                const x = 50 + 52 * Math.cos(ugol);
-                const y = 50 + 56 * Math.sin(ugol);
+                const x = 50 + 50 * Math.cos(ugol);
+                const y = 50 + 52 * Math.sin(ugol);
 
                 let klass = "mesto";
+                let bejdzh = "";
+
                 if (igrok.login === d.ya) { klass += " mesto-ya"; }
-                if (igrok.login === d.vedushiy) { klass += " mesto-vedushiy"; }
-                else if (d.zhdem.indexOf(igrok.login) !== -1) { klass += " mesto-zhdem"; }
-                else if (d.status === "otvety" || d.status === "golosovanie") { klass += " mesto-gotov"; }
+
+                if (igrok.login === d.vedushiy) {
+                    klass += " mesto-vedushiy";
+                    bejdzh = "<div class='bejdzh bejdzh-hodit'>ВЕДУЩИЙ</div>";
+                } else if (d.zhdem.indexOf(igrok.login) !== -1) {
+                    klass += " mesto-zhdem";
+                    bejdzh = "<div class='bejdzh bejdzh-zhdem'>ХОДИТ</div>";
+                } else if (d.status === "otvety" || d.status === "golosovanie") {
+                    klass += " mesto-gotov";
+                    bejdzh = "<div class='bejdzh bejdzh-gotov'>ГОТОВ</div>";
+                }
 
                 const bukva = igrok.login.charAt(0).toUpperCase();
-                const korona = igrok.login === d.vedushiy ? "<div class='korona'>👑</div>" : "";
 
                 html += "<div class='" + klass + "' style='left:" + x + "%; top:" + y + "%;'>" +
-                        korona +
                         "<div class='avatar'>" + bukva + "</div>" +
                         "<div class='imya-igroka'>" + igrok.login + "</div>" +
                         "<div class='ochki-igroka'>" + igrok.ochki + "</div>" +
+                        bejdzh +
                         "</div>";
             }
 
             if (html !== proshlie_mesta) {
-                const staryе = krug.querySelectorAll(".mesto");
-                for (const m of staryе) { m.remove(); }
-                krug.insertAdjacentHTML("beforeend", html);
+                document.getElementById("stol-krug").innerHTML = html;
                 proshlie_mesta = html;
             }
         }
@@ -156,12 +163,12 @@
 
             else if (d.status === "associaciya") {
                 if (d.ya_vedushiy) {
-                    html = "<h3 class='zagolovok-stola'>Ты ведущий</h3>" +
+                    html = "<div class='tablichka-hodit'>Твой ход, ты ведущий</div>" +
                         "<p class='podzagolovok'>Выбери карточку внизу и придумай ассоциацию</p>" +
                         "<input type='text' id='pole-associacii' class='pole' placeholder='Ассоциация' maxlength='80'>" +
                         "<br><br><button class='knopka knopka-glavnaya' onclick='zagadat()'>Загадать</button>";
                 } else {
-                    html = "<h3 class='zagolovok-stola'>Ведущий: " + d.vedushiy + "</h3>" +
+                    html = "<div class='tablichka-hodit'>Ходит " + d.vedushiy + "</div>" +
                         "<p class='podzagolovok'>Придумывает ассоциацию...</p>";
                 }
             }
@@ -174,7 +181,8 @@
                     html += "<p class='podzagolovok'>Ты сдал карточку. Сдали: " + d.sdali +
                             " из " + d.igroki.length + "</p>";
                 } else {
-                    html += "<p class='podzagolovok'>Выбери карточку под эту ассоциацию</p>" +
+                    html += "<div class='tablichka-hodit'>Твой ход</div>" +
+                            "<p class='podzagolovok'>Выбери карточку под эту ассоциацию</p>" +
                             "<button class='knopka knopka-glavnaya' onclick='sdat()'>Сдать карточку</button>";
                 }
             }
@@ -188,20 +196,17 @@
                     html += "<p class='podzagolovok'>Ты проголосовал. Проголосовали: " +
                             d.progolosovali + " из " + (d.igroki.length - 1) + "</p>";
                 } else {
-                    html += "<p class='podzagolovok'>Угадай карточку ведущего</p>";
+                    html += "<div class='tablichka-hodit'>Твой ход</div>" +
+                            "<p class='podzagolovok'>Угадай карточку ведущего</p>";
                 }
 
                 html += "<div class='setka-stola'>";
-                for (const k of d.karty_na_stole) {
+                for (let i = 0; i < d.karty_na_stole.length; i++) {
+                    const k = d.karty_na_stole[i];
                     let klass = "karta-stola";
-                    let mozhno_golos = "0";
-                    if (k.moya) {
-                        klass += " karta-moya";
-                    } else if (!d.ya_vedushiy && !d.ya_golosoval) {
-                        mozhno_golos = "1";
-                    }
+                    if (k.moya) { klass += " karta-moya"; }
                     html += "<img src='/static/cards/" + k.karta + "' class='" + klass +
-                            "' onclick='otkryt_modal(\"" + k.karta + "\", \"golos\", " + mozhno_golos + ")'>";
+                            "' onclick='otkryt_stol(" + i + ")'>";
                 }
                 html += "</div>";
             }
@@ -209,12 +214,13 @@
             else if (d.status === "itogi") {
                 html = "<h3 class='zagolovok-stola'>Итоги раунда</h3>" +
                        "<div class='associaciya'>" + d.associaciya + "</div><div class='setka-stola'>";
-                for (const k of d.itogi) {
+                for (let i = 0; i < d.itogi.length; i++) {
+                    const k = d.itogi[i];
                     let klass = "karta-stola";
                     if (k.eto_vedushego) { klass += " karta-pravilnaya"; }
                     html += "<div class='blok-itoga'><img src='/static/cards/" + k.karta +
-                            "' class='" + klass + "' onclick='otkryt_modal(\"" + k.karta +
-                            "\", \"prosmotr\", 0)'><div class='avtor'>" + k.avtor +
+                            "' class='" + klass + "' onclick='otkryt_itogi(" + i + ")'>" +
+                            "<div class='avtor'>" + k.avtor +
                             (k.eto_vedushego ? " ★" : "") + "</div>";
                     if (k.golosovali.length > 0) {
                         html += "<div class='golosa'>" + k.golosovali.join(", ") + "</div>";
@@ -234,7 +240,11 @@
                 document.getElementById("stol").innerHTML = html;
                 proshlyy_stol = html;
             }
+
+            posledniye_dannye = d;
         }
+
+        let posledniye_dannye = null;
 
         function narisovat_karty(d) {
             const blok = document.getElementById("blok-ruki");
@@ -253,13 +263,13 @@
                 mozhno_vybirat ? "Твои карточки, нажми чтобы рассмотреть" : "Твои карточки";
 
             let html = "";
-            for (const karta of d.moi_karty) {
+            for (let i = 0; i < d.moi_karty.length; i++) {
+                const karta = d.moi_karty[i];
                 let klass = "karta";
                 if (karta === vybrannaya) { klass += " karta-vybrana"; }
                 if (!mozhno_vybirat) { klass += " karta-neaktivna"; }
                 html += "<img src='/static/cards/" + karta + "' class='" + klass +
-                        "' onclick='otkryt_modal(\"" + karta + "\", \"vybor\", " +
-                        (mozhno_vybirat ? "1" : "0") + ")'>";
+                        "' onclick='otkryt_ruku(" + i + ")'>";
             }
 
             if (html !== proshlye_karty) {
@@ -271,14 +281,11 @@
         function narisovat_niz(d) {
             let html = "";
 
-            if (d.status !== "konec") {
-                html += "<button class='knopka-malenkaya' onclick='vyyti()'>Выйти из игры</button>";
-                if (d.ya === d.hozyain && d.zhdem.length > 0) {
-                    for (const kogo of d.zhdem) {
-                        if (kogo !== d.ya) {
-                            html += "<button class='knopka-malenkaya knopka-opasnaya' onclick='propustit(\"" +
-                                    kogo + "\")'>Исключить " + kogo + "</button>";
-                        }
+            if (d.status !== "konec" && d.ya === d.hozyain && d.zhdem.length > 0) {
+                for (const kogo of d.zhdem) {
+                    if (kogo !== d.ya) {
+                        html += "<button class='knopka-malenkaya knopka-opasnaya' onclick='propustit(\"" +
+                                kogo + "\")'>Исключить " + kogo + "</button>";
                     }
                 }
             }
@@ -289,22 +296,81 @@
             }
         }
 
-        function otkryt_modal(karta, rezhim, mozhno) {
-            document.getElementById("modal-karta").src = "/static/cards/" + karta;
-
-            let knopki = "";
-            if (rezhim === "vybor" && mozhno === 1) {
-                knopki = "<button class='knopka knopka-glavnaya' onclick='podtverdit_vybor(\"" +
-                         karta + "\")'>Выбрать эту</button>";
-            } else if (rezhim === "golos" && mozhno === 1) {
-                knopki = "<button class='knopka knopka-glavnaya' onclick='podtverdit_golos(\"" +
-                         karta + "\")'>Голосовать за неё</button>";
+        function otkryt_ruku(index) {
+            const d = posledniye_dannye;
+            spisok_prosmotra = [];
+            for (const k of d.moi_karty) {
+                spisok_prosmotra.push({ fayl: k, mozhno: mozhno_vybirat });
             }
-            knopki += "<button class='knopka' onclick='zakryt_modal()'>Закрыть</button>";
+            rezhim_prosmotra = "vybor";
+            tekushiy_index = index;
+            pokazat_modal();
+        }
 
-            document.getElementById("modal-knopki").innerHTML = knopki;
+        function otkryt_stol(index) {
+            const d = posledniye_dannye;
+            spisok_prosmotra = [];
+            for (const k of d.karty_na_stole) {
+                const mozhno = !k.moya && !d.ya_vedushiy && !d.ya_golosoval;
+                spisok_prosmotra.push({ fayl: k.karta, mozhno: mozhno });
+            }
+            rezhim_prosmotra = "golos";
+            tekushiy_index = index;
+            pokazat_modal();
+        }
+
+        function otkryt_itogi(index) {
+            const d = posledniye_dannye;
+            spisok_prosmotra = [];
+            for (const k of d.itogi) {
+                spisok_prosmotra.push({ fayl: k.karta, mozhno: false });
+            }
+            rezhim_prosmotra = "prosmotr";
+            tekushiy_index = index;
+            pokazat_modal();
+        }
+
+        function pokazat_modal() {
+            if (spisok_prosmotra.length === 0) { return; }
             document.getElementById("modal").className = "modal modal-vidno";
             modal_otkryt = true;
+            narisovat_modal();
+        }
+
+        function narisovat_modal() {
+            const tekushaya = spisok_prosmotra[tekushiy_index];
+
+            document.getElementById("modal-karta").src = "/static/cards/" + tekushaya.fayl;
+
+            document.getElementById("schetchik").textContent =
+                (tekushiy_index + 1) + " из " + spisok_prosmotra.length;
+
+            let tochki = "";
+            for (let i = 0; i < spisok_prosmotra.length; i++) {
+                const klass = i === tekushiy_index ? "tochka-karty tochka-aktivnaya" : "tochka-karty";
+                tochki += "<div class='" + klass + "' onclick='pereyti(" + i + ")'></div>";
+            }
+            document.getElementById("tochki").innerHTML = tochki;
+
+            let knopki = "";
+            if (rezhim_prosmotra === "vybor" && tekushaya.mozhno) {
+                knopki = "<button class='knopka knopka-glavnaya' onclick='podtverdit_vybor()'>Выбрать эту</button>";
+            } else if (rezhim_prosmotra === "golos" && tekushaya.mozhno) {
+                knopki = "<button class='knopka knopka-glavnaya' onclick='podtverdit_golos()'>Голосовать за неё</button>";
+            }
+            knopki += "<button class='knopka' onclick='zakryt_modal()'>Закрыть</button>";
+            document.getElementById("modal-knopki").innerHTML = knopki;
+        }
+
+        function listat(shag) {
+            const vsego = spisok_prosmotra.length;
+            tekushiy_index = (tekushiy_index + shag + vsego) % vsego;
+            narisovat_modal();
+        }
+
+        function pereyti(index) {
+            tekushiy_index = index;
+            narisovat_modal();
         }
 
         function zakryt_modal() {
@@ -312,14 +378,15 @@
             modal_otkryt = false;
         }
 
-        function podtverdit_vybor(karta) {
-            vybrannaya = karta;
+        function podtverdit_vybor() {
+            vybrannaya = spisok_prosmotra[tekushiy_index].fayl;
             proshlye_karty = "";
             zakryt_modal();
             obnovit();
         }
 
-        async function podtverdit_golos(karta) {
+        async function podtverdit_golos() {
+            const karta = spisok_prosmotra[tekushiy_index].fayl;
             zakryt_modal();
             const f = new FormData();
             f.append("kod", kod);
@@ -386,7 +453,25 @@
         }
 
         document.addEventListener("keydown", function (e) {
-            if (e.key === "Escape" && modal_otkryt) { zakryt_modal(); }
+            if (!modal_otkryt) { return; }
+            if (e.key === "Escape") { zakryt_modal(); }
+            if (e.key === "ArrowLeft") { listat(-1); }
+            if (e.key === "ArrowRight") { listat(1); }
+        });
+
+        let nachalo_x = 0;
+        const kartinka = document.getElementById("modal-karta");
+
+        kartinka.addEventListener("touchstart", function (e) {
+            nachalo_x = e.changedTouches[0].screenX;
+        });
+
+        kartinka.addEventListener("touchend", function (e) {
+            const konec_x = e.changedTouches[0].screenX;
+            const raznica = konec_x - nachalo_x;
+            if (Math.abs(raznica) > 50) {
+                listat(raznica > 0 ? -1 : 1);
+            }
         });
 
         obnovit();
