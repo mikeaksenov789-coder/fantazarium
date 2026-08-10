@@ -30,8 +30,12 @@
             <span class="schet" id="schet"></span>
         </div>
 
-        <div class="stol" id="stol">
-            <p>Загрузка...</p>
+        <div class="pole-igry">
+            <div class="stol-krug" id="stol-krug">
+                <div class="stol-centr" id="stol">
+                    <p>Загрузка...</p>
+                </div>
+            </div>
         </div>
 
         <div class="moya-ruka" id="blok-ruki">
@@ -60,6 +64,7 @@
         let proshlyy_stol = "";
         let proshlye_karty = "";
         let proshlyy_niz = "";
+        let proshlie_mesta = "";
         let modal_otkryt = false;
 
         async function obnovit() {
@@ -81,9 +86,47 @@
             }
             document.getElementById("schet").textContent = schet;
 
+            narisovat_mesta(d);
             narisovat_stol(d);
             narisovat_karty(d);
             narisovat_niz(d);
+        }
+
+        function narisovat_mesta(d) {
+            const krug = document.getElementById("stol-krug");
+            const vsego = d.igroki.length;
+            let html = "";
+
+            for (let i = 0; i < vsego; i++) {
+                const igrok = d.igroki[i];
+
+                const ugol = (i / vsego) * 2 * Math.PI - Math.PI / 2;
+                const x = 50 + 52 * Math.cos(ugol);
+                const y = 50 + 56 * Math.sin(ugol);
+
+                let klass = "mesto";
+                if (igrok.login === d.ya) { klass += " mesto-ya"; }
+                if (igrok.login === d.vedushiy) { klass += " mesto-vedushiy"; }
+                else if (d.zhdem.indexOf(igrok.login) !== -1) { klass += " mesto-zhdem"; }
+                else if (d.status === "otvety" || d.status === "golosovanie") { klass += " mesto-gotov"; }
+
+                const bukva = igrok.login.charAt(0).toUpperCase();
+                const korona = igrok.login === d.vedushiy ? "<div class='korona'>👑</div>" : "";
+
+                html += "<div class='" + klass + "' style='left:" + x + "%; top:" + y + "%;'>" +
+                        korona +
+                        "<div class='avatar'>" + bukva + "</div>" +
+                        "<div class='imya-igroka'>" + igrok.login + "</div>" +
+                        "<div class='ochki-igroka'>" + igrok.ochki + "</div>" +
+                        "</div>";
+            }
+
+            if (html !== proshlie_mesta) {
+                const staryе = krug.querySelectorAll(".mesto");
+                for (const m of staryе) { m.remove(); }
+                krug.insertAdjacentHTML("beforeend", html);
+                proshlie_mesta = html;
+            }
         }
 
         function narisovat_stol(d) {
@@ -114,7 +157,7 @@
             else if (d.status === "associaciya") {
                 if (d.ya_vedushiy) {
                     html = "<h3 class='zagolovok-stola'>Ты ведущий</h3>" +
-                        "<p class='podzagolovok'>Выбери карточку и придумай к ней ассоциацию</p>" +
+                        "<p class='podzagolovok'>Выбери карточку внизу и придумай ассоциацию</p>" +
                         "<input type='text' id='pole-associacii' class='pole' placeholder='Ассоциация' maxlength='80'>" +
                         "<br><br><button class='knopka knopka-glavnaya' onclick='zagadat()'>Загадать</button>";
                 } else {
@@ -145,7 +188,7 @@
                     html += "<p class='podzagolovok'>Ты проголосовал. Проголосовали: " +
                             d.progolosovali + " из " + (d.igroki.length - 1) + "</p>";
                 } else {
-                    html += "<p class='podzagolovok'>Нажми на карточку, чтобы рассмотреть и проголосовать</p>";
+                    html += "<p class='podzagolovok'>Угадай карточку ведущего</p>";
                 }
 
                 html += "<div class='setka-stola'>";
