@@ -28,7 +28,6 @@ body::before {
         radial-gradient(ellipse 48% 38% at 78% 30%, rgba(41, 98, 214, 0.26), transparent 60%),
         radial-gradient(ellipse 52% 34% at 60% 82%, rgba(196, 62, 158, 0.20), transparent 62%),
         #05030f;
-    will-change: transform;
     animation: tumannost 60s ease-in-out infinite alternate;
 }
 
@@ -56,14 +55,13 @@ body::before {
         radial-gradient(1.8px 1.8px at 70% 18%, rgba(255,236,190,0.8), transparent),
         radial-gradient(1.2px 1.2px at 18% 47%, rgba(255,255,255,0.7), transparent);
     background-size: 520px 520px, 660px 660px, 580px 580px, 740px 740px;
-    will-change: opacity;
     animation: mercanie 7s ease-in-out infinite alternate;
-    opacity: 0.75;
+    opacity: 0.7;
 }
 
 @keyframes mercanie {
-    from { opacity: 0.5; }
-    to   { opacity: 0.9; }
+    from { opacity: 0.45; }
+    to   { opacity: 0.85; }
 }
 
 .kosmos {
@@ -78,7 +76,6 @@ body::before {
     position: absolute;
     border-radius: 50%;
     overflow: hidden;
-    will-change: transform;
 }
 
 .planeta::after {
@@ -178,7 +175,6 @@ body::before {
     width: 78px;
     height: 78px;
     opacity: 0.46;
-    will-change: transform;
     animation: plyv-1 104s ease-in-out infinite reverse;
 }
 
@@ -218,8 +214,7 @@ body::before {
     left: 39%;
     top: 6%;
     opacity: 0.4;
-    background:
-        radial-gradient(circle at 34% 30%, #e8e4f0, #b0aac2 50%, #6e6880 100%);
+    background: radial-gradient(circle at 34% 30%, #e8e4f0, #b0aac2 50%, #6e6880 100%);
     box-shadow: inset -8px -5px 18px rgba(0,0,0,0.5), 0 0 30px rgba(200, 195, 220, 0.28);
     animation: plyv-2 82s ease-in-out infinite reverse;
 }
@@ -252,7 +247,6 @@ body::before {
     width: 76px;
     height: 26px;
     opacity: 0.62;
-    will-change: transform;
 }
 
 .sputnik .korpus {
@@ -264,7 +258,6 @@ body::before {
     margin: -7px 0 0 -11px;
     border-radius: 3px;
     background: linear-gradient(150deg, #d8d4e4, #8e8aa4 55%, #55516a);
-    box-shadow: 0 0 10px rgba(200, 220, 255, 0.5);
 }
 
 .sputnik .panel {
@@ -273,12 +266,8 @@ body::before {
     width: 25px;
     height: 15px;
     margin-top: -7.5px;
-    background:
-        repeating-linear-gradient(90deg,
-            #2a4a8c 0px, #2a4a8c 3px, #4068b8 3px, #4068b8 4px),
-        #2a4a8c;
+    background: repeating-linear-gradient(90deg, #2a4a8c 0px, #2a4a8c 3px, #4068b8 3px, #4068b8 4px), #2a4a8c;
     border: 1px solid rgba(150, 180, 230, 0.55);
-    box-shadow: 0 0 8px rgba(80, 130, 220, 0.4);
 }
 
 .sputnik .panel-l { left: 0; }
@@ -296,24 +285,14 @@ body::before {
     border-bottom: none;
 }
 
-.sputnik-1 {
-    top: 23%;
-    left: -12%;
-    animation: rejs-vpravo 68s linear infinite;
-}
-
-.sputnik-2 {
-    top: 71%;
-    left: -12%;
-    animation: rejs-vlevo 92s linear infinite 22s;
-}
+.sputnik-1 { top: 23%; left: -12%; animation: rejs-vpravo 68s linear infinite; }
+.sputnik-2 { top: 71%; left: -12%; animation: rejs-vlevo 92s linear infinite 22s; }
 
 .stanciya {
     position: absolute;
     width: 96px;
     height: 34px;
     opacity: 0.55;
-    will-change: transform;
 }
 
 .stanciya .modul {
@@ -325,7 +304,6 @@ body::before {
     margin: -5.5px 0 0 -20px;
     border-radius: 6px;
     background: linear-gradient(180deg, #e0dce8, #a09ab4 50%, #66607e);
-    box-shadow: 0 0 12px rgba(210, 225, 255, 0.5);
 }
 
 .stanciya .modul::after {
@@ -346,21 +324,14 @@ body::before {
     width: 27px;
     height: 26px;
     margin-top: -13px;
-    background:
-        repeating-linear-gradient(0deg,
-            #22407e 0px, #22407e 3px, #3a5ea8 3px, #3a5ea8 4px),
-        #22407e;
+    background: repeating-linear-gradient(0deg, #22407e 0px, #22407e 3px, #3a5ea8 3px, #3a5ea8 4px), #22407e;
     border: 1px solid rgba(140, 175, 225, 0.5);
 }
 
 .stanciya .krylo-l { left: 0; }
 .stanciya .krylo-r { right: 0; }
 
-.stanciya-1 {
-    top: 45%;
-    left: -14%;
-    animation: rejs-vpravo 110s linear infinite 40s;
-}
+.stanciya-1 { top: 45%; left: -14%; animation: rejs-vpravo 110s linear infinite 40s; }
 
 @keyframes rejs-vpravo {
     0%   { transform: translate3d(0, 0, 0) rotate(6deg); opacity: 0; }
@@ -383,7 +354,6 @@ body::before {
     background: #fff;
     border-radius: 50%;
     box-shadow: 0 0 7px 2px rgba(255, 255, 255, 0.85);
-    will-change: transform;
 }
 
 .kometa::after {
@@ -438,7 +408,6 @@ body::before {
     color: #a99fd0;
     margin-bottom: 34px;
     font-style: italic;
-    letter-spacing: 0.5px;
 }
 
 h2 {
@@ -468,18 +437,18 @@ h3 {
     font-size: 18px;
     font-family: Georgia, serif;
     color: #e8e4f5;
-    background: rgba(46, 30, 82, 0.75);
+    background: rgba(46, 30, 82, 0.8);
     border: 1px solid rgba(160, 130, 240, 0.42);
     border-radius: 14px;
     text-decoration: none;
     cursor: pointer;
-    transition: transform 0.2s, background 0.2s, border-color 0.2s;
+    transition: transform 0.18s, background 0.18s, border-color 0.18s;
     min-width: 230px;
     max-width: 100%;
 }
 
 .knopka:hover {
-    background: rgba(66, 44, 116, 0.85);
+    background: rgba(66, 44, 116, 0.9);
     border-color: rgba(190, 160, 255, 0.75);
     transform: translateY(-3px);
 }
@@ -494,9 +463,7 @@ h3 {
     box-shadow: 0 0 28px rgba(245, 217, 138, 0.3);
 }
 
-.knopka-glavnaya:hover {
-    background: linear-gradient(135deg, #fff0bd, #f5d98a);
-}
+.knopka-glavnaya:hover { background: linear-gradient(135deg, #fff0bd, #f5d98a); }
 
 .forma {
     display: flex;
@@ -513,23 +480,19 @@ h3 {
     max-width: 100%;
     border: 1px solid rgba(160, 130, 240, 0.38);
     border-radius: 14px;
-    background: rgba(20, 12, 45, 0.85);
+    background: rgba(20, 12, 45, 0.9);
     color: #e8e4f5;
     outline: none;
     text-align: center;
-    transition: border-color 0.2s;
+    transition: border-color 0.18s;
 }
 
 .pole::placeholder { color: #7d72ab; }
-
-.pole:focus {
-    border-color: rgba(245, 217, 138, 0.8);
-    background: rgba(30, 18, 60, 0.9);
-}
+.pole:focus { border-color: rgba(245, 217, 138, 0.8); }
 
 .pravila-text {
     text-align: left;
-    background: rgba(14, 8, 34, 0.85);
+    background: rgba(14, 8, 34, 0.88);
     padding: 28px;
     border-radius: 20px;
     border: 1px solid rgba(160, 130, 240, 0.28);
@@ -547,7 +510,7 @@ h3 {
     color: #a99fd0;
     text-decoration: none;
     font-size: 16px;
-    transition: color 0.2s;
+    transition: color 0.18s;
 }
 
 .ssylka-nazad:hover { color: #f5d98a; }
@@ -563,7 +526,7 @@ h3 {
 
 .soobshenie-vidno {
     display: block;
-    background: rgba(76, 26, 44, 0.85);
+    background: rgba(76, 26, 44, 0.9);
     border: 1px solid rgba(230, 110, 150, 0.5);
     color: #f0b8cc;
     padding: 13px 18px;
@@ -581,11 +544,7 @@ h3 {
     border-top: 1px solid rgba(160, 130, 240, 0.18);
 }
 
-.punkt {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
+.punkt { display: flex; flex-direction: column; gap: 4px; }
 
 .cifra {
     font-size: clamp(24px, 7vw, 32px);
@@ -593,11 +552,7 @@ h3 {
     text-shadow: 0 0 20px rgba(245, 217, 138, 0.35);
 }
 
-.podpis {
-    font-size: 12px;
-    color: #7d72ab;
-    letter-spacing: 1px;
-}
+.podpis { font-size: 12px; color: #7d72ab; letter-spacing: 1px; }
 
 .kak-igraem {
     display: flex;
@@ -611,17 +566,14 @@ h3 {
     display: flex;
     align-items: flex-start;
     gap: 14px;
-    background: rgba(20, 12, 45, 0.7);
+    background: rgba(20, 12, 45, 0.75);
     border: 1px solid rgba(160, 130, 240, 0.2);
     border-radius: 14px;
     padding: 14px 18px;
-    transition: border-color 0.2s, transform 0.2s;
+    transition: border-color 0.18s, transform 0.18s;
 }
 
-.shag:hover {
-    border-color: rgba(190, 160, 255, 0.45);
-    transform: translateX(4px);
-}
+.shag:hover { border-color: rgba(190, 160, 255, 0.45); transform: translateX(4px); }
 
 .shag-nomer {
     flex-shrink: 0;
@@ -637,17 +589,9 @@ h3 {
     font-size: 15px;
 }
 
-.shag-text {
-    font-size: 15px;
-    color: #b8aed8;
-}
+.shag-text { font-size: 15px; color: #b8aed8; }
 
-.lenta-kart {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-    margin-top: 34px;
-}
+.lenta-kart { display: flex; justify-content: center; gap: 10px; margin-top: 34px; }
 
 .mini-karta {
     width: 62px;
@@ -673,7 +617,7 @@ h3 {
 }
 
 .blok-info {
-    background: rgba(20, 12, 45, 0.7);
+    background: rgba(20, 12, 45, 0.75);
     border: 1px solid rgba(160, 130, 240, 0.2);
     border-radius: 16px;
     padding: 20px 22px;
@@ -689,24 +633,19 @@ h3 {
     margin-bottom: 10px;
 }
 
-.blok-info p {
-    font-size: 14px;
-    color: #9a90c4;
-    line-height: 1.7;
-}
+.blok-info p { font-size: 14px; color: #9a90c4; line-height: 1.7; }
 
 .kod-komnaty {
     font-size: clamp(34px, 11vw, 56px);
     letter-spacing: clamp(6px, 3vw, 14px);
     color: #f5d98a;
-    background: rgba(14, 8, 34, 0.85);
+    background: rgba(14, 8, 34, 0.88);
     padding: 20px 10px;
     border-radius: 20px;
     border: 1px solid rgba(245, 217, 138, 0.35);
     margin-bottom: 10px;
     font-weight: bold;
     text-shadow: 0 0 28px rgba(245, 217, 138, 0.55);
-    box-shadow: 0 0 50px rgba(126, 92, 214, 0.22);
 }
 
 .knopka-kopirovat {
@@ -718,25 +657,16 @@ h3 {
     cursor: pointer;
     padding: 6px 14px;
     border-radius: 10px;
-    transition: color 0.2s;
 }
 
 .knopka-kopirovat:hover { color: #f5d98a; }
 
-.zagolovok-spiska {
-    margin: 36px 0 14px;
-    letter-spacing: 2px;
-}
+.zagolovok-spiska { margin: 36px 0 14px; letter-spacing: 2px; }
 
-.spisok-igrokov {
-    display: flex;
-    flex-direction: column;
-    gap: 9px;
-    margin-bottom: 20px;
-}
+.spisok-igrokov { display: flex; flex-direction: column; gap: 9px; margin-bottom: 20px; }
 
 .igrok {
-    background: rgba(20, 12, 45, 0.8);
+    background: rgba(20, 12, 45, 0.85);
     border: 1px solid rgba(160, 130, 240, 0.28);
     border-radius: 14px;
     padding: 14px 18px;
@@ -753,23 +683,15 @@ h3 {
     vertical-align: middle;
 }
 
-.podskazka {
-    color: #a99fd0;
-    margin-bottom: 20px;
-    font-size: 16px;
-}
-
-.podskazka-gotovo {
-    color: #7ee8c0;
-    font-weight: bold;
-}
+.podskazka { color: #a99fd0; margin-bottom: 20px; font-size: 16px; }
+.podskazka-gotovo { color: #7ee8c0; font-weight: bold; }
 
 .igrovoy-ekran {
     width: 100%;
     max-width: 1120px;
     display: flex;
     flex-direction: column;
-    gap: 18px;
+    gap: 16px;
     position: relative;
     z-index: 1;
 }
@@ -780,10 +702,17 @@ h3 {
     align-items: center;
     gap: 12px;
     flex-wrap: wrap;
-    background: rgba(14, 8, 34, 0.88);
-    padding: 13px 22px;
+    background: rgba(14, 8, 34, 0.92);
+    padding: 12px 20px;
     border-radius: 16px;
     border: 1px solid rgba(160, 130, 240, 0.28);
+}
+
+.levaya-chast {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    flex-wrap: wrap;
 }
 
 .malenkiy-kod {
@@ -793,39 +722,152 @@ h3 {
     font-weight: bold;
 }
 
-.nomer-raunda {
-    font-size: 15px;
-    color: #a99fd0;
+.nomer-raunda { font-size: 15px; color: #a99fd0; }
+
+.knopka-vyhod {
+    padding: 9px 20px;
+    font-size: 14px;
+    font-family: Georgia, serif;
+    color: #f0b8cc;
+    background: rgba(76, 26, 44, 0.7);
+    border: 1px solid rgba(230, 110, 150, 0.55);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background 0.18s, color 0.18s, border-color 0.18s;
+    white-space: nowrap;
 }
 
-.schet {
-    font-size: 14px;
-    color: #a99fd0;
-    text-align: right;
-    flex: 1;
-    min-width: 140px;
+.knopka-vyhod:hover {
+    background: rgba(140, 44, 76, 0.85);
+    color: #ffd8e4;
+    border-color: rgba(255, 140, 180, 0.85);
+}
+
+.pole-igry {
+    display: flex;
+    justify-content: center;
+    padding: 8px 0;
+}
+
+.stol-krug {
+    position: relative;
+    width: min(100%, 640px);
+    height: 300px;
+    border-radius: 50%;
+    background:
+        radial-gradient(ellipse at 50% 38%, rgba(126, 92, 214, 0.2), transparent 62%),
+        radial-gradient(ellipse at 50% 50%, #1e1240 0%, #150c2e 55%, #0d0720 100%);
+    border: 2px solid rgba(160, 130, 240, 0.32);
+    box-shadow: inset 0 0 60px rgba(126, 92, 214, 0.18), 0 14px 44px rgba(0, 0, 0, 0.55);
+    flex-shrink: 0;
+}
+
+.mesto {
+    position: absolute;
+    width: 78px;
+    text-align: center;
+    transform: translate(-50%, -50%);
+}
+
+.avatar {
+    width: 48px;
+    height: 48px;
+    margin: 0 auto 5px;
+    border-radius: 50%;
+    background: linear-gradient(145deg, #3d2a6e, #241548);
+    border: 2px solid rgba(160, 130, 240, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 21px;
+    color: #c4b8e8;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.mesto-ya .avatar { border-color: rgba(126, 232, 192, 0.7); }
+
+.mesto-vedushiy .avatar {
+    background: linear-gradient(145deg, #8a6c24, #4a3810);
+    border: 3px solid #ffe9a8;
+    color: #fff6d8;
+    box-shadow: 0 0 30px rgba(245, 217, 138, 0.85);
+    width: 56px;
+    height: 56px;
+    font-size: 25px;
+}
+
+.mesto-gotov .avatar { border-color: rgba(126, 232, 192, 0.75); }
+.mesto-zhdem .avatar { border-color: rgba(240, 150, 110, 0.85); }
+
+.imya-igroka {
+    font-size: 12px;
+    color: #b8aed8;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.mesto-vedushiy .imya-igroka { color: #ffe9a8; font-weight: bold; }
+
+.ochki-igroka { font-size: 14px; color: #f5d98a; font-weight: bold; }
+
+.bejdzh {
+    display: inline-block;
+    font-size: 9px;
+    letter-spacing: 1.5px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    margin-top: 3px;
+    white-space: nowrap;
+}
+
+.bejdzh-hodit {
+    background: linear-gradient(135deg, #ffe9a8, #e0b04a);
+    color: #1a0f30;
+    font-weight: bold;
+    box-shadow: 0 0 14px rgba(245, 217, 138, 0.6);
+}
+
+.bejdzh-gotov {
+    background: rgba(40, 96, 78, 0.9);
+    color: #9df0cc;
+    border: 1px solid rgba(126, 232, 192, 0.5);
+}
+
+.bejdzh-zhdem {
+    background: rgba(110, 56, 34, 0.9);
+    color: #ffc4a6;
+    border: 1px solid rgba(240, 150, 110, 0.6);
 }
 
 .stol {
-    background: rgba(14, 8, 34, 0.8);
+    background: rgba(14, 8, 34, 0.85);
     border: 1px solid rgba(160, 130, 240, 0.26);
     border-radius: 22px;
-    padding: 30px 18px;
+    padding: 28px 18px;
     text-align: center;
     min-height: 170px;
     box-shadow: 0 12px 44px rgba(0, 0, 0, 0.45);
 }
 
-.zagolovok-stola {
-    margin-bottom: 10px;
-    color: #f5d98a;
-    letter-spacing: 1px;
+.zagolovok-stola { margin-bottom: 10px; color: #f5d98a; letter-spacing: 1px; }
+
+.tablichka-hodit {
+    display: inline-block;
+    background: linear-gradient(135deg, rgba(138, 108, 36, 0.55), rgba(46, 30, 82, 0.7));
+    border: 2px solid #ffe9a8;
+    border-radius: 14px;
+    padding: 12px 26px;
+    margin-bottom: 12px;
+    font-size: clamp(17px, 4.5vw, 22px);
+    color: #ffe9a8;
+    box-shadow: 0 0 30px rgba(245, 217, 138, 0.35);
 }
 
 .associaciya {
     font-size: clamp(22px, 6vw, 36px);
     color: #ffe9a8;
-    background: rgba(20, 12, 45, 0.85);
+    background: rgba(20, 12, 45, 0.9);
     padding: 18px 30px;
     border-radius: 16px;
     border: 1px solid rgba(245, 217, 138, 0.32);
@@ -837,21 +879,14 @@ h3 {
     text-shadow: 0 0 24px rgba(245, 217, 138, 0.45);
 }
 
-#pole-associacii {
-    width: 340px;
-    margin-top: 10px;
-}
+#pole-associacii { width: 340px; margin-top: 10px; }
 
-.zagolovok-ruki {
-    margin-bottom: 14px;
-    text-align: center;
-    letter-spacing: 1px;
-}
+.zagolovok-ruki { margin-bottom: 14px; text-align: center; letter-spacing: 1px; }
 
 .setka-kart {
     display: grid;
-    grid-template-columns: repeat(6, 1fr);
-    gap: 11px;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 12px;
 }
 
 .karta {
@@ -861,14 +896,11 @@ h3 {
     border-radius: 12px;
     border: 2px solid rgba(160, 130, 240, 0.22);
     cursor: pointer;
-    transition: transform 0.22s, border-color 0.22s, opacity 0.22s;
+    transition: transform 0.18s, border-color 0.18s, opacity 0.18s;
     display: block;
 }
 
-.karta:hover {
-    transform: translateY(-10px);
-    border-color: rgba(190, 160, 255, 0.6);
-}
+.karta:hover { transform: translateY(-10px); border-color: rgba(190, 160, 255, 0.6); }
 
 .karta-vybrana {
     border-color: #f5d98a;
@@ -887,35 +919,26 @@ h3 {
 }
 
 .karta-stola {
-    width: 132px;
+    width: 140px;
     aspect-ratio: 2 / 3;
     object-fit: cover;
     border-radius: 12px;
     border: 2px solid rgba(160, 130, 240, 0.22);
     cursor: pointer;
-    transition: transform 0.22s, border-color 0.22s;
+    transition: transform 0.18s, border-color 0.18s;
     display: block;
 }
 
-.karta-stola:hover {
-    transform: translateY(-10px);
-    border-color: rgba(190, 160, 255, 0.6);
-}
+.karta-stola:hover { transform: translateY(-10px); border-color: rgba(190, 160, 255, 0.6); }
 
-.karta-moya {
-    opacity: 0.45;
-    border-color: rgba(160, 130, 240, 0.5);
-}
+.karta-moya { opacity: 0.45; border-color: rgba(160, 130, 240, 0.5); }
 
 .karta-pravilnaya {
     border-color: #f5d98a;
     box-shadow: 0 0 34px rgba(245, 217, 138, 0.65);
 }
 
-.blok-itoga {
-    text-align: center;
-    max-width: 132px;
-}
+.blok-itoga { text-align: center; max-width: 140px; }
 
 .avtor {
     margin-top: 8px;
@@ -925,19 +948,14 @@ h3 {
     word-break: break-word;
 }
 
-.golosa {
-    font-size: 12px;
-    color: #a99fd0;
-    margin-top: 3px;
-    word-break: break-word;
-}
+.golosa { font-size: 12px; color: #a99fd0; margin-top: 3px; word-break: break-word; }
 
 .niz-panel {
     display: flex;
     justify-content: center;
     gap: 9px;
     flex-wrap: wrap;
-    margin-top: 12px;
+    margin-top: 6px;
 }
 
 .knopka-malenkaya {
@@ -945,26 +963,17 @@ h3 {
     font-size: 13px;
     font-family: Georgia, serif;
     color: #a99fd0;
-    background: rgba(20, 12, 45, 0.8);
+    background: rgba(20, 12, 45, 0.85);
     border: 1px solid rgba(160, 130, 240, 0.3);
     border-radius: 10px;
     cursor: pointer;
-    transition: background 0.2s, color 0.2s;
+    transition: background 0.18s, color 0.18s;
 }
 
-.knopka-malenkaya:hover {
-    background: rgba(66, 44, 116, 0.9);
-    color: #e8e4f5;
-}
+.knopka-malenkaya:hover { background: rgba(66, 44, 116, 0.9); color: #e8e4f5; }
 
-.knopka-opasnaya {
-    border-color: rgba(230, 110, 150, 0.45);
-    color: #e5a0ba;
-}
-
-.knopka-opasnaya:hover {
-    background: rgba(96, 34, 56, 0.9);
-}
+.knopka-opasnaya { border-color: rgba(230, 110, 150, 0.45); color: #e5a0ba; }
+.knopka-opasnaya:hover { background: rgba(96, 34, 56, 0.9); }
 
 .pedestal {
     display: flex;
@@ -978,7 +987,7 @@ h3 {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: rgba(20, 12, 45, 0.8);
+    background: rgba(20, 12, 45, 0.85);
     border: 1px solid rgba(160, 130, 240, 0.26);
     border-radius: 14px;
     padding: 14px 20px;
@@ -993,10 +1002,7 @@ h3 {
     box-shadow: 0 0 34px rgba(245, 217, 138, 0.28);
 }
 
-.ochki-itog {
-    color: #f5d98a;
-    font-weight: bold;
-}
+.ochki-itog { color: #f5d98a; font-weight: bold; }
 
 .modal {
     display: none;
@@ -1005,219 +1011,165 @@ h3 {
     z-index: 100;
     align-items: center;
     justify-content: center;
-    padding: 20px;
+    padding: 16px;
 }
 
 .modal-vidno { display: flex; }
 
-.modal-fon {
-    position: absolute;
-    inset: 0;
-    background: rgba(5, 3, 15, 0.94);
-}
+.modal-fon { position: absolute; inset: 0; background: rgba(5, 3, 15, 0.95); }
 
 .modal-okno {
     position: relative;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 18px;
-    max-height: 92vh;
+    gap: 14px;
+    max-height: 94vh;
+    width: 100%;
+    max-width: 720px;
 }
 
+.ryad-prosmotra {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    width: 100%;
+}
+
+.strelka {
+    flex-shrink: 0;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: rgba(46, 30, 82, 0.85);
+    border: 1px solid rgba(160, 130, 240, 0.5);
+    color: #e8e4f5;
+    font-size: 26px;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.18s, border-color 0.18s, transform 0.18s;
+    user-select: none;
+}
+
+.strelka:hover {
+    background: rgba(86, 60, 146, 0.95);
+    border-color: rgba(200, 170, 255, 0.8);
+    transform: scale(1.08);
+}
+
+.strelka:active { transform: scale(0.96); }
+
 .modal-karta {
-    max-width: min(78vw, 440px);
-    max-height: 70vh;
+    max-width: min(66vw, 400px);
+    max-height: 66vh;
     border-radius: 16px;
     border: 2px solid rgba(160, 130, 240, 0.45);
     box-shadow: 0 24px 70px rgba(0, 0, 0, 0.85);
+    touch-action: pan-y;
+    user-select: none;
+    -webkit-user-drag: none;
 }
 
-.modal-knopki {
+.schetchik-kart {
+    font-size: 14px;
+    color: #a99fd0;
+    letter-spacing: 2px;
+}
+
+.tochki-kart {
     display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
     justify-content: center;
+    gap: 7px;
+}
+
+.tochka-karty {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(160, 130, 240, 0.35);
+    cursor: pointer;
+    transition: background 0.18s, transform 0.18s;
+}
+
+.tochka-karty:hover { background: rgba(190, 160, 255, 0.7); }
+
+.tochka-aktivnaya {
+    background: #f5d98a;
+    transform: scale(1.3);
+}
+
+.modal-knopki { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+
+@media (max-width: 1000px) {
+    .stol-krug { height: 270px; }
 }
 
 @media (max-width: 780px) {
-    body {
-        align-items: flex-start;
-        padding: 12px;
+    body { align-items: flex-start; padding: 10px; }
+
+    .igrovoy-ekran { gap: 12px; }
+
+    .verh-panel { padding: 10px 14px; gap: 8px; }
+    .levaya-chast { gap: 12px; }
+    .malenkiy-kod { font-size: 17px; letter-spacing: 3px; }
+    .nomer-raunda { font-size: 13px; }
+    .knopka-vyhod { padding: 7px 14px; font-size: 12px; }
+
+    .pole-igry { padding: 4px 0; }
+
+    .stol-krug {
+        width: min(100%, 380px);
+        height: 340px;
+        border-radius: 46%;
     }
 
-    .igrovoy-ekran { gap: 14px; }
-    .verh-panel { padding: 10px 15px; font-size: 14px; }
-    .schet { text-align: left; width: 100%; flex: none; font-size: 13px; }
-    .stol { padding: 22px 12px; }
+    .mesto { width: 62px; }
+    .avatar { width: 40px; height: 40px; font-size: 18px; }
+    .mesto-vedushiy .avatar { width: 46px; height: 46px; font-size: 21px; }
+    .imya-igroka { font-size: 11px; }
+    .ochki-igroka { font-size: 13px; }
+    .bejdzh { font-size: 8px; padding: 1px 6px; letter-spacing: 1px; }
 
-    .setka-kart {
-        grid-template-columns: repeat(3, 1fr);
-        gap: 8px;
-    }
+    .stol { padding: 20px 12px; }
+
+    .setka-kart { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 
     .karta:hover, .karta-stola:hover { transform: none; }
 
-    .karta-stola {
-        width: calc(33.333% - 10px);
-        max-width: 112px;
-    }
+    .karta-stola { width: calc(50% - 8px); max-width: 130px; }
+    .blok-itoga { max-width: 130px; }
 
-    .blok-itoga { max-width: 112px; }
     .knopka { min-width: 200px; padding: 14px 28px; }
     #pole-associacii { width: 100%; max-width: 320px; }
-    .modal-karta { max-width: 88vw; max-height: 64vh; }
 
-    .gazoviy { width: 120px; height: 120px; right: -45px; }
-    .ledyanoy { width: 76px; height: 76px; left: -28px; }
-    .kamenistaya { width: 52px; height: 52px; }
-    .zemlepodobnaya { width: 42px; height: 42px; }
-    .s-kolcami { width: 50px; height: 50px; }
-    .lunnaya { display: none; }
-    .stanciya { display: none; }
+    .ryad-prosmotra { gap: 6px; }
+    .strelka { width: 42px; height: 42px; font-size: 21px; }
+    .modal-karta { max-width: calc(100vw - 130px); max-height: 62vh; }
+
+    .gazoviy { width: 110px; height: 110px; right: -42px; }
+    .ledyanoy { width: 70px; height: 70px; left: -26px; }
+    .kamenistaya, .zemlepodobnaya, .lunnaya, .s-kolcami, .stanciya { display: none; }
     .sputnik { transform: scale(0.7); }
     .mini-karta { width: 46px; }
     .kometa::after { width: 58px; }
 }
 
+@media (max-width: 420px) {
+    .stol-krug { height: 300px; }
+    .mesto { width: 54px; }
+    .avatar { width: 34px; height: 34px; font-size: 15px; }
+    .mesto-vedushiy .avatar { width: 40px; height: 40px; font-size: 18px; }
+    .imya-igroka { font-size: 10px; }
+    .karta-stola { width: calc(50% - 7px); }
+    .strelka { width: 36px; height: 36px; font-size: 18px; }
+    .modal-karta { max-width: calc(100vw - 110px); }
+}
+
 @media (prefers-reduced-motion: reduce) {
     body::before, .zvezdy, .planeta, .s-kolcami { animation: none; }
     .kometa, .sputnik, .stanciya { display: none; }
-}
-
-.pole-igry {
-    position: relative;
-    margin-bottom: 18px;
-    padding: 26px 16px;
-}
-
-.stol-krug {
-    position: relative;
-    max-width: 620px;
-    margin: 0 auto;
-    aspect-ratio: 16 / 9;
-    border-radius: 50%;
-    background:
-        radial-gradient(ellipse at 50% 38%, rgba(126, 92, 214, 0.22), transparent 62%),
-        radial-gradient(ellipse at 50% 50%, #1e1240 0%, #150c2e 55%, #0d0720 100%);
-    border: 2px solid rgba(160, 130, 240, 0.32);
-    box-shadow:
-        inset 0 0 70px rgba(126, 92, 214, 0.2),
-        0 16px 50px rgba(0, 0, 0, 0.55);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.stol-centr {
-    text-align: center;
-    padding: 0 14%;
-    z-index: 2;
-}
-
-.mesto {
-    position: absolute;
-    width: 74px;
-    text-align: center;
-    transform: translate(-50%, -50%);
-    transition: transform 0.25s;
-}
-
-.avatar {
-    width: 46px;
-    height: 46px;
-    margin: 0 auto 5px;
-    border-radius: 50%;
-    background: linear-gradient(145deg, #3d2a6e, #241548);
-    border: 2px solid rgba(160, 130, 240, 0.45);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 20px;
-    color: #c4b8e8;
-    transition: border-color 0.25s, box-shadow 0.25s, background 0.25s;
-}
-
-.mesto-ya .avatar {
-    border-color: rgba(126, 232, 192, 0.75);
-}
-
-.mesto-vedushiy .avatar {
-    background: linear-gradient(145deg, #7a5f1e, #4a3810);
-    border-color: #f5d98a;
-    color: #ffe9a8;
-    box-shadow: 0 0 26px rgba(245, 217, 138, 0.6);
-}
-
-.mesto-gotov .avatar {
-    border-color: rgba(126, 232, 192, 0.7);
-    box-shadow: 0 0 18px rgba(126, 232, 192, 0.35);
-}
-
-.mesto-zhdem .avatar {
-    border-color: rgba(230, 140, 110, 0.6);
-    animation: zhdem-pulse 1.6s ease-in-out infinite;
-}
-
-@keyframes zhdem-pulse {
-    0%, 100% { box-shadow: 0 0 10px rgba(230, 140, 110, 0.3); }
-    50%      { box-shadow: 0 0 24px rgba(230, 140, 110, 0.75); }
-}
-
-.imya-igroka {
-    font-size: 12px;
-    color: #b8aed8;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 74px;
-}
-
-.ochki-igroka {
-    font-size: 14px;
-    color: #f5d98a;
-    font-weight: bold;
-}
-
-.korona {
-    position: absolute;
-    top: -13px;
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 15px;
-}
-
-.status-tochka {
-    display: inline-block;
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    margin-left: 4px;
-    vertical-align: middle;
-}
-
-.tochka-gotov { background: #7ee8c0; }
-.tochka-zhdem { background: #e08c6e; }
-
-@media (max-width: 780px) {
-    .pole-igry { padding: 18px 6px; }
-
-    .stol-krug {
-        aspect-ratio: 1 / 1;
-        max-width: 340px;
-    }
-
-    .stol-centr { padding: 0 18%; }
-
-    .mesto { width: 56px; }
-
-    .avatar {
-        width: 36px;
-        height: 36px;
-        font-size: 16px;
-    }
-
-    .imya-igroka { font-size: 10px; max-width: 56px; }
-    .ochki-igroka { font-size: 12px; }
-    .korona { font-size: 12px; top: -10px; }
 }
