@@ -18,76 +18,93 @@
     </div>
 
     <div class="container">
-        <p class="nadzagolovok" data-t="vyberi_kolodu">выбери колоду</p>
-        <h2 data-t="bystraya_igra">Быстрая игра</h2>
+        <p class="nadzagolovok">выбери колоду</p>
+        <h2>Быстрая игра</h2>
+        <p class="podzagolovok">Нажми на колоду, и тебя подберут к другим игрокам</p>
 
         <div class="soobshenie" id="soobshenie"></div>
 
         <div class="kolody" id="kolody">
-            <p class="podzagolovok">...</p>
+            <p class="podzagolovok">Загрузка колод...</p>
         </div>
 
-        <div class="razdelitel"><span data-t="ili_druzya">или играй с друзьями</span></div>
+        <div class="razdelitel"><span>или играй только с друзьями</span></div>
 
         <div class="blok-druzya">
             <form class="forma" method="post" action="/sozdat_komnatu">
-                <select name="koloda" class="pole vybor-kolody" id="vybor-kolody-sozdat"></select>
-                <button type="submit" class="knopka" data-t="sozdat_zakrytuyu">Создать закрытую комнату</button>
+                <p class="podpis-nad-polem">Какой колодой будете играть</p>
+                <select name="koloda" class="pole vybor-kolody">
+                    <option value="omut">Тихий омут</option>
+                    <option value="balagan">Шумный балаган</option>
+                </select>
+                <button type="submit" class="knopka">Создать закрытую комнату</button>
             </form>
 
-            <form class="forma" method="post" action="/voyti_v_komnatu" style="margin-top: 16px;">
-                <input type="text" name="kod" class="pole" required maxlength="5" data-tp="kod_komnaty">
-                <button type="submit" class="knopka" data-t="voyti_po_kodu">Войти по коду</button>
+            <div class="razdelitel-tonkiy"></div>
+
+            <form class="forma" method="post" action="/voyti_v_komnatu">
+                <p class="podpis-nad-polem">Уже есть код от друга</p>
+                <input type="text" name="kod" class="pole" required maxlength="5" placeholder="Код комнаты">
+                <button type="submit" class="knopka">Войти по коду</button>
             </form>
         </div>
 
-        <a href="/glavnaya" class="ssylka-nazad" data-t="na_glavnuyu">На главную</a>
+        <a href="/glavnaya" class="ssylka-nazad">На главную</a>
     </div>
 
     <script>
-        function napolnit_vybor() {
-            const vybor = document.getElementById("vybor-kolody-sozdat");
-            vybor.innerHTML =
-                "<option value='omut'>" + t("omut") + "</option>" +
-                "<option value='balagan'>" + t("balagan") + "</option>";
-        }
-
         async function zagruzit_kolody() {
-            const otvet = await fetch("/api/kolody");
-            const d = await otvet.json();
+            const blok = document.getElementById("kolody");
 
-            let html = "";
-            for (const k of d.kolody) {
-                const podpis = k.igraet > 0
-                    ? "<span class='ishchut'>" + t("ishchut") + " " + k.igraet + "</span>"
-                    : "<span class='nikogo'>" + t("nikogo") + "</span>";
+            try {
+                const otvet = await fetch("/api/kolody");
 
-                html += "<form method='post' action='/bystraya_igra' class='karta-kolody'>";
-                html += "<input type='hidden' name='koloda' value='" + k.kod + "'>";
-                html += "<button type='submit' class='knopka-koloda koloda-" + k.kod + "'>";
-                html += "<span class='koloda-imya'>" + t(k.kod) + "</span>";
-                html += "<span class='koloda-opis'>" + t(k.kod + "_opis") + "</span>";
-                html += "<span class='koloda-niz'>" + k.kart + " " + t("kart") +
-                        " &nbsp;·&nbsp; " + podpis + "</span>";
-                html += "</button></form>";
+                if (!otvet.ok) {
+                    blok.innerHTML = "<p class='podzagolovok'>Не удалось загрузить колоды</p>";
+                    return;
+                }
+
+                const d = await otvet.json();
+
+                if (!d.kolody || d.kolody.length === 0) {
+                    blok.innerHTML = "<p class='podzagolovok'>Колоды не найдены</p>";
+                    return;
+                }
+
+                let html = "";
+                for (const k of d.kolody) {
+                    const podpis = k.igraet > 0
+                        ? "<span class='ishchut'>сейчас ищут игру: " + k.igraet + "</span>"
+                        : "<span class='nikogo'>сейчас никого нет</span>";
+
+                    html += "<form method='post' action='/bystraya_igra' class='karta-kolody'>";
+                    html += "<input type='hidden' name='koloda' value='" + k.kod + "'>";
+                    html += "<button type='submit' class='knopka-koloda koloda-" + k.kod + "'>";
+                    html += "<span class='koloda-imya'>" + k.nazvanie + "</span>";
+                    html += "<span class='koloda-opis'>" + k.opisanie + "</span>";
+                    html += "<span class='koloda-niz'>" + k.kart + " карт &nbsp;·&nbsp; " + podpis + "</span>";
+                    html += "</button></form>";
+                }
+
+                blok.innerHTML = html;
+
+            } catch (e) {
+                blok.innerHTML = "<p class='podzagolovok'>Ошибка связи с сервером</p>";
             }
-
-            document.getElementById("kolody").innerHTML = html;
         }
 
         const parametry = new URLSearchParams(window.location.search);
         const oshibka = parametry.get("oshibka");
-        const blok = document.getElementById("soobshenie");
+        const soob = document.getElementById("soobshenie");
 
         if (oshibka === "net") {
-            blok.textContent = t("oshibka_kod");
-            blok.className = "soobshenie soobshenie-vidno";
+            soob.textContent = "Комната с таким кодом не найдена";
+            soob.className = "soobshenie soobshenie-vidno";
         } else if (oshibka === "idet") {
-            blok.textContent = t("oshibka_idet");
-            blok.className = "soobshenie soobshenie-vidno";
+            soob.textContent = "В этой комнате игра уже началась или нет мест";
+            soob.className = "soobshenie soobshenie-vidno";
         }
 
-        napolnit_vybor();
         zagruzit_kolody();
         setInterval(zagruzit_kolody, 5000);
     </script>

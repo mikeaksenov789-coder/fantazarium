@@ -776,3 +776,16 @@ async def zagruzit_avatar(fayl: UploadFile = File(), login: str = Cookie(default
         return RedirectResponse("/profil?oshibka=format", status_code=303)
 
     return RedirectResponse("/profil?ok=1", status_code=303)
+
+@app.get("/api/kolody")
+def dannye_kolod():
+    spisok = []
+    for kod_kolody, info in database.KOLODY.items():
+        spisok.append({
+            "kod": kod_kolody,
+            "nazvanie": info["nazvanie"],
+            "opisanie": info["opisanie"],
+            "kart": database.skolko_kart_v_kolode(kod_kolody),
+            "igraet": database.skolko_igraet_publichno(kod_kolody)
+        })
+    return JSONResponse({"kolody": spisok})
