@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Правила - Фантазариум</title>
     <link rel="stylesheet" href="/static/style.css">
+    <script src="/static/lang.js"></script>
 </head>
 <body>
 
@@ -13,68 +14,149 @@
     <div class="kosmos">
         <div class="planeta gazoviy"></div>
         <div class="planeta ledyanoy"></div>
-        <div class="planeta kamenistaya"></div>
         <div class="s-kolcami">
             <div class="telo"></div>
             <div class="kolco"></div>
             <div class="kolco kolco-2"></div>
         </div>
         <div class="kometa kometa-1"></div>
-        <div class="kometa kometa-3"></div>
-        <div class="stanciya stanciya-1">
-            <div class="krylo krylo-l"></div>
-            <div class="modul"></div>
-            <div class="krylo krylo-r"></div>
-        </div>
     </div>
 
     <div class="container">
-        <p class="nadzagolovok">как играть</p>
-        <h2>Правила игры</h2>
+        <h2 data-t="pravila">Правила игры</h2>
 
-        <div class="pravila-text">
-            <p><b>Игроков:</b> от 4 до 7. У каждого на руках 6 карточек.</p>
-            <p><b>1.</b> Один игрок становится ведущим. Он выбирает карточку и придумывает к ней ассоциацию: слово, фразу или строчку из песни.</p>
-            <p><b>2.</b> Остальные видят ассоциацию и выбирают из своих карточек ту, которая тоже под неё подходит.</p>
-            <p><b>3.</b> Все карточки перемешиваются и выкладываются на стол.</p>
-            <p><b>4.</b> Игроки голосуют за карточку, которая, по их мнению, принадлежит ведущему. За свою голосовать нельзя.</p>
-            <p><b>5.</b> Ведущий меняется каждый раунд по кругу.</p>
-        </div>
-
-        <div class="blok-info">
-            <h4>Время на ход</h4>
-            <p>На выбор карточки и на голосование даётся 45 секунд. Кто не успел, пропускает раунд и не получает очков. Его карточка не попадёт на стол.</p>
-        </div>
-
-        <div class="blok-info">
-            <h4>Как считаются очки</h4>
-            <p>Если карточку ведущего угадали все или не угадал никто, ведущий не получает ничего, а проголосовавшие получают по 2 очка.</p>
-            <p style="margin-top: 10px;">Если угадала только часть игроков, ведущий получает 2 очка и ещё по одному за каждого угадавшего. Угадавшие получают по 3 очка.</p>
-            <p style="margin-top: 10px;">Дополнительно каждый получает по 1 очку за любой голос, отданный за его карточку.</p>
-        </div>
-
-        <div class="blok-info">
-            <h4>Главный секрет</h4>
-            <p>Ассоциация не должна быть ни слишком очевидной, ни слишком запутанной. Ведущий получает очки только тогда, когда его карточку угадали не все и не никто. В этом вся игра.</p>
-        </div>
+        <div class="pravila-text" id="tekst-pravil"></div>
 
         <div class="opisanie">
             <div class="punkt">
                 <span class="cifra">6</span>
-                <span class="podpis">карт на руках</span>
+                <span class="podpis" id="p1"></span>
             </div>
             <div class="punkt">
-                <span class="cifra">45</span>
-                <span class="podpis">секунд на ход</span>
+                <span class="cifra">120</span>
+                <span class="podpis" id="p2"></span>
             </div>
             <div class="punkt">
                 <span class="cifra">30</span>
-                <span class="podpis">очков до победы</span>
+                <span class="podpis" id="p3"></span>
             </div>
         </div>
 
-        <a href="/" class="ssylka-nazad">На главную</a>
+        <a href="/glavnaya" class="ssylka-nazad" data-t="na_glavnuyu">На главную</a>
     </div>
+
+    <script>
+        const PRAVILA = {
+            ru: {
+                p1: "карт на руках", p2: "секунд на ход", p3: "очков до победы",
+                text: [
+                    "<b>Игроков:</b> от 4 до 7. У каждого на руках 6 карточек.",
+                    "<b>1.</b> Один игрок становится ведущим. Он выбирает карточку и придумывает к ней ассоциацию.",
+                    "<b>2.</b> Остальные видят ассоциацию и выбирают из своих карточек ту, которая тоже под неё подходит.",
+                    "<b>3.</b> Все карточки перемешиваются и выкладываются на стол.",
+                    "<b>4.</b> Игроки голосуют за карточку ведущего. За свою голосовать нельзя.",
+                    "<b>Время:</b> на выбор карточки и на голосование даётся 120 секунд. Кто не успел, пропускает раунд и не голосует.",
+                    "<b>Очки:</b> если карточку угадали все или никто, ведущий не получает ничего, а проголосовавшие получают по 2 очка.",
+                    "Если угадала часть, ведущий получает 2 очка плюс по одному за каждого угадавшего, а угадавшие по 3 очка.",
+                    "Дополнительно каждый получает по 1 очку за голос, отданный за его карточку.",
+                    "<b>Замена:</b> можно поменять все свои карточки за 5 очков.",
+                    "<b>Победа:</b> первый, кто наберёт 30 очков."
+                ]
+            },
+            en: {
+                p1: "cards in hand", p2: "seconds per turn", p3: "points to win",
+                text: [
+                    "<b>Players:</b> 4 to 7. Everyone holds 6 cards.",
+                    "<b>1.</b> One player becomes the storyteller. They pick a card and give a clue for it.",
+                    "<b>2.</b> Everyone else sees the clue and picks a card of their own that also fits.",
+                    "<b>3.</b> All cards are shuffled and laid on the table.",
+                    "<b>4.</b> Players vote for the storyteller's card. You cannot vote for your own.",
+                    "<b>Time:</b> 120 seconds for picking a card and for voting. If you run out, you skip the round and don't vote.",
+                    "<b>Scoring:</b> if everyone or nobody guessed right, the storyteller gets nothing and voters get 2 points each.",
+                    "If only some guessed, the storyteller gets 2 points plus 1 per correct guess, and guessers get 3 each.",
+                    "You also get 1 point for every vote cast on your card.",
+                    "<b>Swap:</b> you can replace your whole hand for 5 points.",
+                    "<b>Victory:</b> first to 30 points."
+                ]
+            },
+            es: {
+                p1: "cartas en mano", p2: "segundos por turno", p3: "puntos para ganar",
+                text: [
+                    "<b>Jugadores:</b> de 4 a 7. Cada uno tiene 6 cartas.",
+                    "<b>1.</b> Un jugador es el narrador. Elige una carta y da una pista.",
+                    "<b>2.</b> Los demás ven la pista y eligen una carta propia que también encaje.",
+                    "<b>3.</b> Todas las cartas se mezclan y se ponen sobre la mesa.",
+                    "<b>4.</b> Los jugadores votan por la carta del narrador. No puedes votar la tuya.",
+                    "<b>Tiempo:</b> 120 segundos para elegir carta y para votar. Si se acaba, pierdes la ronda y no votas.",
+                    "<b>Puntos:</b> si todos o nadie acierta, el narrador no gana nada y los votantes ganan 2 puntos.",
+                    "Si solo algunos aciertan, el narrador gana 2 puntos más 1 por cada acierto, y quienes acertaron ganan 3.",
+                    "También ganas 1 punto por cada voto que reciba tu carta.",
+                    "<b>Cambio:</b> puedes cambiar todas tus cartas por 5 puntos.",
+                    "<b>Victoria:</b> el primero en llegar a 30 puntos."
+                ]
+            },
+            de: {
+                p1: "Karten auf der Hand", p2: "Sekunden pro Zug", p3: "Punkte zum Sieg",
+                text: [
+                    "<b>Spieler:</b> 4 bis 7. Jeder hat 6 Karten.",
+                    "<b>1.</b> Ein Spieler ist der Erzähler. Er wählt eine Karte und nennt einen Hinweis.",
+                    "<b>2.</b> Die anderen sehen den Hinweis und wählen eine eigene passende Karte.",
+                    "<b>3.</b> Alle Karten werden gemischt und ausgelegt.",
+                    "<b>4.</b> Die Spieler stimmen für die Karte des Erzählers. Für die eigene darf man nicht stimmen.",
+                    "<b>Zeit:</b> 120 Sekunden für Kartenwahl und Abstimmung. Wer zu langsam ist, setzt aus.",
+                    "<b>Punkte:</b> raten alle oder niemand richtig, bekommt der Erzähler nichts, die Abstimmenden je 2 Punkte.",
+                    "Raten nur einige richtig, bekommt der Erzähler 2 Punkte plus 1 je Treffer, die Ratenden je 3.",
+                    "Zusätzlich gibt es 1 Punkt für jede Stimme auf deine Karte.",
+                    "<b>Tausch:</b> die ganze Hand kann für 5 Punkte getauscht werden.",
+                    "<b>Sieg:</b> wer zuerst 30 Punkte hat."
+                ]
+            },
+            fr: {
+                p1: "cartes en main", p2: "secondes par tour", p3: "points pour gagner",
+                text: [
+                    "<b>Joueurs :</b> de 4 à 7. Chacun a 6 cartes.",
+                    "<b>1.</b> Un joueur devient le conteur. Il choisit une carte et donne un indice.",
+                    "<b>2.</b> Les autres voient l'indice et choisissent une carte qui correspond aussi.",
+                    "<b>3.</b> Toutes les cartes sont mélangées et posées sur la table.",
+                    "<b>4.</b> Les joueurs votent pour la carte du conteur. On ne vote pas pour la sienne.",
+                    "<b>Temps :</b> 120 secondes pour choisir et pour voter. Si le temps manque, tu passes la manche.",
+                    "<b>Points :</b> si tous ou personne ne devine, le conteur ne marque rien et les votants gagnent 2 points.",
+                    "Si seuls quelques-uns devinent, le conteur gagne 2 points plus 1 par bonne réponse, et eux 3 points.",
+                    "Tu gagnes aussi 1 point par vote reçu sur ta carte.",
+                    "<b>Échange :</b> tu peux changer toute ta main pour 5 points.",
+                    "<b>Victoire :</b> le premier à 30 points."
+                ]
+            },
+            zh: {
+                p1: "手牌数量", p2: "每回合秒数", p3: "获胜所需分数",
+                text: [
+                    "<b>玩家：</b>4至7人。每人手持6张牌。",
+                    "<b>1.</b> 一名玩家担任讲述者，选一张牌并给出线索。",
+                    "<b>2.</b> 其他人看到线索后，从自己手牌中选一张也符合的牌。",
+                    "<b>3.</b> 所有牌洗混后摆在桌面上。",
+                    "<b>4.</b> 玩家投票猜讲述者的牌，不能投给自己的牌。",
+                    "<b>时间：</b>选牌和投票各120秒。超时则本回合跳过，且不能投票。",
+                    "<b>计分：</b>如果全部猜中或全部猜错，讲述者不得分，投票者各得2分。",
+                    "如果只有部分猜中，讲述者得2分再加每位猜中者1分，猜中者各得3分。",
+                    "此外，每有一票投给你的牌，你就多得1分。",
+                    "<b>换牌：</b>花5分可以更换全部手牌。",
+                    "<b>胜利：</b>率先达到30分者获胜。"
+                ]
+            }
+        };
+
+        const p = PRAVILA[YAZYK] || PRAVILA.ru;
+
+        document.getElementById("p1").textContent = p.p1;
+        document.getElementById("p2").textContent = p.p2;
+        document.getElementById("p3").textContent = p.p3;
+
+        let html = "";
+        for (const stroka of p.text) {
+            html += "<p>" + stroka + "</p>";
+        }
+        document.getElementById("tekst-pravil").innerHTML = html;
+    </script>
 
 </body>
 </html>

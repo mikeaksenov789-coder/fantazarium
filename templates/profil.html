@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Профиль - Фантазариум</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="/static/lang.js"></script>
+</head>
+<body>
+
+    <div class="zvezdy"></div>
+
+    <div class="kosmos">
+        <div class="planeta ledyanoy"></div>
+        <div class="planeta zemlepodobnaya"></div>
+        <div class="kometa kometa-2"></div>
+    </div>
+
+    <div class="container">
+        <p class="nadzagolovok" data-t="moya_statistika">Моя статистика</p>
+        <h2 data-t="profil">Профиль</h2>
+
+        <div class="soobshenie" id="soobshenie"></div>
+
+        <div class="bolshoy-avatar-blok">
+            <img class="bolshoy-avatar" id="bolshoy-avatar" src="" alt="">
+            <div class="bukva-avatar" id="bukva-avatar"></div>
+        </div>
+
+        <p class="imya-profilya" id="imya-profilya"></p>
+
+        <form method="post" action="/zagruzit_avatar" enctype="multipart/form-data" class="forma-avatara">
+            <label class="knopka-fayl">
+                <span data-t="vybrat_foto">Выбрать фото</span>
+                <input type="file" name="fayl" accept="image/*" onchange="this.form.submit()">
+            </label>
+        </form>
+
+        <div class="statistika">
+            <div class="stat-blok">
+                <span class="stat-cifra" id="stat-pobed">0</span>
+                <span class="stat-podpis" data-t="pobed">Побед</span>
+            </div>
+            <div class="stat-blok">
+                <span class="stat-cifra" id="stat-igr">0</span>
+                <span class="stat-podpis" data-t="igr">Игр сыграно</span>
+            </div>
+            <div class="stat-blok">
+                <span class="stat-cifra" id="stat-procent">0%</span>
+                <span class="stat-podpis" data-t="procent">Процент побед</span>
+            </div>
+        </div>
+
+        <div class="blok-info">
+            <h4 data-t="yazyk">Язык игры</h4>
+            <select class="pole vybor-kolody" id="vybor-yazyka" onchange="smenit()">
+                <option value="ru">Русский</option>
+                <option value="en">English</option>
+                <option value="es">Español</option>
+                <option value="de">Deutsch</option>
+                <option value="fr">Français</option>
+                <option value="zh">中文</option>
+            </select>
+        </div>
+
+        <a href="/glavnaya" class="ssylka-nazad" data-t="na_glavnuyu">На главную</a>
+    </div>
+
+    <script>
+        async function zagruzit() {
+            const otvet = await fetch("/api/profil");
+            const d = await otvet.json();
+
+            if (d.oshibka) {
+                window.location.href = "/vhod";
+                return;
+            }
+
+            document.getElementById("imya-profilya").textContent = d.login;
+            document.getElementById("stat-pobed").textContent = d.pobed;
+            document.getElementById("stat-igr").textContent = d.igr;
+            document.getElementById("stat-procent").textContent = d.procent + "%";
+
+            const kartinka = document.getElementById("bolshoy-avatar");
+            const bukva = document.getElementById("bukva-avatar");
+
+            if (d.avatar) {
+                kartinka.src = "/static/avatars/" + d.avatar + "?v=" + Date.now();
+                kartinka.style.display = "block";
+                bukva.style.display = "none";
+            } else {
+                kartinka.style.display = "none";
+                bukva.style.display = "flex";
+                bukva.textContent = d.login.charAt(0).toUpperCase();
+            }
+
+            document.getElementById("vybor-yazyka").value = d.yazyk;
+        }
+
+        async function smenit() {
+            const yazyk = document.getElementById("vybor-yazyka").value;
+            const f = new FormData();
+            f.append("yazyk", yazyk);
+            await fetch("/smenit_yazyk", { method: "POST", body: f });
+            window.location.reload();
+        }
+
+        const parametry = new URLSearchParams(window.location.search);
+        const blok = document.getElementById("soobshenie");
+
+        if (parametry.get("oshibka") === "bolshoy") {
+            blok.textContent = "Файл слишком большой, максимум 6 МБ";
+            blok.className = "soobshenie soobshenie-vidno";
+        } else if (parametry.get("oshibka") === "format") {
+            blok.textContent = "Не удалось прочитать изображение";
+            blok.className = "soobshenie soobshenie-vidno";
+        }
+
+        zagruzit();
+    </script>
+
+</body>
+</html>

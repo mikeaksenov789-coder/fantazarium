@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Регистрация - Фантазариум</title>
     <link rel="stylesheet" href="/static/style.css">
+    <script src="/static/lang.js"></script>
 </head>
 <body>
 
@@ -12,45 +13,47 @@
 
     <div class="kosmos">
         <div class="planeta gazoviy"></div>
-        <div class="planeta zemlepodobnaya"></div>
         <div class="planeta lunnaya"></div>
         <div class="kometa kometa-2"></div>
-        <div class="kometa kometa-3"></div>
-        <div class="sputnik sputnik-2">
-            <div class="panel panel-l"></div>
-            <div class="korpus"></div>
-            <div class="antenna"></div>
-            <div class="panel panel-r"></div>
-        </div>
     </div>
 
     <div class="container">
-        <p class="nadzagolovok">создай героя</p>
-        <h2>Регистрация</h2>
+        <h2 data-t="registraciya">Регистрация</h2>
 
         <div class="soobshenie" id="soobshenie"></div>
 
         <form class="forma" method="post" action="/registraciya">
-            <input type="text" name="login" placeholder="Придумай логин" class="pole" required maxlength="20" autocomplete="username">
-            <input type="password" name="parol" placeholder="Придумай пароль" class="pole" required autocomplete="new-password">
-            <button type="submit" class="knopka knopka-glavnaya">Зарегистрироваться</button>
+            <input type="text" name="login" class="pole" required maxlength="20" autocomplete="username" data-tp="pridumay_login">
+            <input type="password" name="parol" class="pole" required autocomplete="new-password" data-tp="pridumay_parol">
+
+            <p class="podpis-yazyka" data-t="yazyk">Язык игры</p>
+            <select name="yazyk" class="pole vybor-kolody" id="vybor-yazyka">
+                <option value="ru">Русский</option>
+                <option value="en">English</option>
+                <option value="es">Español</option>
+                <option value="de">Deutsch</option>
+                <option value="fr">Français</option>
+                <option value="zh">中文</option>
+            </select>
+
+            <button type="submit" class="knopka knopka-glavnaya" data-t="zaregistrirovatsya">Зарегистрироваться</button>
         </form>
 
-        <a href="/vhod" class="ssylka-nazad">У меня уже есть аккаунт</a>
-
-        <div class="blok-info">
-            <h4>О безопасности</h4>
-            <p>Пароль не хранится в открытом виде. Он превращается в хеш, из которого невозможно восстановить исходный пароль. Даже владелец сайта его не видит.</p>
-        </div>
-
-        <p class="podskazka-nizu">Логин увидят другие игроки в комнате.</p>
+        <a href="/vhod" class="ssylka-nazad" data-t="est_akk">У меня уже есть аккаунт</a>
     </div>
 
     <script>
+        document.getElementById("vybor-yazyka").value = YAZYK;
+
+        document.getElementById("vybor-yazyka").addEventListener("change", function () {
+            document.cookie = "yazyk=" + this.value + "; path=/; max-age=31536000";
+            window.location.reload();
+        });
+
         const parametry = new URLSearchParams(window.location.search);
         if (parametry.get("oshibka") === "zanyat") {
             const blok = document.getElementById("soobshenie");
-            blok.textContent = "Такой логин уже занят, придумай другой";
+            blok.textContent = t("oshibka_zanyat");
             blok.className = "soobshenie soobshenie-vidno";
         }
     </script>

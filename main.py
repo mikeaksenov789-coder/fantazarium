@@ -1,6 +1,11 @@
-from fastapi import FastAPI, Form, Cookie
+from fastapi import FastAPI, Form, Cookie, UploadFile, File
 from fastapi.responses import FileResponse, RedirectResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
+from PIL import Image
+import io
+import os
+import urllib.request
+import json
 
 import database
 
@@ -12,6 +17,9 @@ database.sozdat_tablicu()
 database.sozdat_tablicy_komnat()
 database.sozdat_tablicu_kart()
 database.sozdat_tablicu_raundov()
+database.sozdat_tablicu_profilya()
+database.sozdat_tablicu_perevodov()
+os.makedirs(os.path.join("static", "avatars"), exist_ok=True)
 
 
 def zakonchit_raund(kod):
@@ -22,6 +30,7 @@ def zakonchit_raund(kod):
 
     if database.est_pobeditel(kod) or not database.hvatit_kart(kod):
         database.izmenit_status(kod, "konec")
+        database.zapisat_rezultaty(kod)
     else:
         database.izmenit_status(kod, "itogi")
 
@@ -107,7 +116,11 @@ def stranica_igry(kod: str):
 
 
 @app.post("/registraciya")
-def obrabotat_registraciyu(login: str = Form(), parol: str = Form()):
+def obrabotat_registraciyu(
+    login: str = Form(),
+    parol: str = Form(),
+    yazyk: str = Form(default="ru")
+):
     login = login.strip()
 
     if len(login) == 0 or len(login) > 20:
@@ -116,20 +129,30 @@ def obrabotat_registraciyu(login: str = Form(), parol: str = Form()):
     if not database.dobavit_igroka(login, parol):
         return RedirectResponse("/registraciya?oshibka=zanyat", status_code=303)
 
-    otvet = RedirectResponse("/lobbi", status_code=303)
+    database.sozdat_profil(login, yazyk)
+
+    otvet = RedirectResponse("/glavnaya", status_code=303)
     otvet.set_cookie(key="login", value=login)
+    otvet.set_cookie(key="yazyk", value=yazyk if yazyk in database.YAZYKI else "ru")
     return otvet
 
 
 @app.post("/vhod")
-def obrabotat_vhod(login: str = Form(), parol: str = Form()):
+def obrabotat_vhod(
+    login: str = Form(),
+    parol: str = Form(),
+    yazyk: str = Form(default="ru")
+):
     login = login.strip()
 
     if not database.proverit_parol(login, parol):
         return RedirectResponse("/vhod?oshibka=1", status_code=303)
 
-    otvet = RedirectResponse("/lobbi", status_code=303)
+    database.ustanovit_yazyk(login, yazyk)
+
+    otvet = RedirectResponse("/glavnaya", status_code=303)
     otvet.set_cookie(key="login", value=login)
+    otvet.set_cookie(key="yazyk", value=yazyk if yazyk in database.YAZYKI else "ru")
     return otvet
 
 
@@ -331,6 +354,7 @@ def igrat_snova(kod: str = Form(), login: str = Cookie(default=None)):
         return JSONResponse({"oshibka": "Только хозяин может начать заново"})
 
     database.novaya_partiya(kod)
+    database.ochistit_zapis(kod)
     database.izmenit_status(kod, "ozhidanie")
 
     return JSONResponse({"ok": True})
@@ -456,6 +480,43 @@ def dannye_igry(kod: str, login: str = Cookie(default=None)):
     raund = database.tekushiy_raund(kod)
     status = database.poluchit_status(kod)
     igroki = database.poluchit_igrokov(kod)
+    avatary = database.avatary_igrokov(kod)
+
+    ya_v_igre = any(i["login"] == login for i in igroki)
+
+    if not ya_v_igre:
+        return JSONResponse({
+            "kod": kod,
+            "status": "konec",
+            "ya_vyshel": True,
+            "igroki": igroki,
+            "avatary": avatary,
+            "tablica": database.tablica_pobediteley(kod),
+            "moi_karty": [],
+            "ya": login,
+            "hozyain": database.poluchit_hozyaina(kod),
+            "ostalos": None,
+            "nomer_raunda": raund["nomer"] if raund else 0,
+            "vedushiy": None,
+            "ya_vedushiy": False,
+            "associaciya": None,
+            "sdali": 0,
+            "ya_sdal": False,
+            "karty_na_stole": [],
+            "ya_golosoval": False,
+            "progolosovali": 0,
+            "vsego_golosuet": 0,
+            "itogi": [],
+            "zhdem": [],
+            "ya_gotov": False,
+            "gotovyh": 0,
+            "mogu_zamenit": False,
+            "ya_mogu_golosovat": False,
+            "moi_ochki": 0,
+            "cena_zameny": database.CENA_ZAMENY,
+            "vsego_sekund": database.SEKUND_NA_HOD,
+            "porog": database.OCHKOV_DLYA_POBEDY
+        })
 
     ya_gotov = False
     moi_ochki = 0
@@ -467,11 +528,14 @@ def dannye_igry(kod: str, login: str = Cookie(default=None)):
     otvet = {
         "kod": kod,
         "status": status,
+        "ya_vyshel": False,
         "igroki": igroki,
+        "avatary": avatary,
         "moi_karty": database.poluchit_ruku(kod, login),
         "ya": login,
         "hozyain": database.poluchit_hozyaina(kod),
         "porog": database.OCHKOV_DLYA_POBEDY,
+        "cena_zameny": database.CENA_ZAMENY,
         "vsego_sekund": database.SEKUND_NA_HOD,
         "moi_ochki": moi_ochki,
         "ostalos": database.ostalos_sekund(kod),
@@ -553,15 +617,71 @@ def dannye_igry(kod: str, login: str = Cookie(default=None)):
 
     return JSONResponse(otvet)
 
-@app.get("/api/kolody")
-def dannye_kolod():
-    spisok = []
-    for kod_kolody, info in database.KOLODY.items():
-        spisok.append({
-            "kod": kod_kolody,
-            "nazvanie": info["nazvanie"],
-            "opisanie": info["opisanie"],
-            "kart": database.skolko_kart_v_kolode(kod_kolody),
-            "igraet": database.skolko_igraet_publichno(kod_kolody)
-        })
-    return JSONResponse({"kolody": spisok})
+ADRES_PEREVODCHIKA = "http://127.0.0.1:5000/translate"
+PEREVODCHIK_RABOTAET = True
+
+
+def sprosit_perevodchik(fraza, yazyk):
+    """Переводит одну фразу через LibreTranslate. None, если не вышло."""
+    global PEREVODCHIK_RABOTAET
+
+    if not PEREVODCHIK_RABOTAET:
+        return None
+
+    try:
+        dannye = json.dumps({
+            "q": fraza,
+            "source": "ru",
+            "target": yazyk,
+            "format": "text"
+        }).encode("utf-8")
+
+        zapros = urllib.request.Request(
+            ADRES_PEREVODCHIKA,
+            data=dannye,
+            headers={"Content-Type": "application/json"}
+        )
+
+        with urllib.request.urlopen(zapros, timeout=8) as otvet:
+            rezultat = json.loads(otvet.read().decode("utf-8"))
+            return rezultat.get("translatedText")
+
+    except Exception:
+        return None
+
+
+@app.post("/api/perevesti")
+async def perevesti_frazy(zapros: dict):
+    """Принимает список фраз, возвращает переводы."""
+    frazy = zapros.get("frazy", [])
+    yazyk = zapros.get("yazyk", "ru")
+
+    if yazyk not in database.YAZYKI or yazyk == "ru":
+        return JSONResponse({"perevody": {}})
+
+    if not isinstance(frazy, list):
+        return JSONResponse({"perevody": {}})
+
+    itog = {}
+
+    for fraza in frazy[:20]:
+        if not isinstance(fraza, str):
+            continue
+
+        fraza = fraza.strip()
+        if len(fraza) == 0 or len(fraza) > 200:
+            continue
+
+        gotovyy = database.vzyat_perevod(fraza, yazyk)
+
+        if gotovyy is not None:
+            itog[fraza] = gotovyy
+            continue
+
+        noviy = sprosit_perevodchik(fraza, yazyk)
+
+        if noviy:
+            database.sohranit_perevod(fraza, yazyk, noviy)
+            itog[fraza] = noviy
+
+    return JSONResponse({"perevody": itog})

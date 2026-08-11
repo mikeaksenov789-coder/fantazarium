@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Фантазариум</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="/static/lang.js"></script>
+</head>
+<body>
+
+    <div class="zvezdy"></div>
+
+    <div class="kosmos">
+        <div class="planeta gazoviy"></div>
+        <div class="planeta ledyanoy"></div>
+        <div class="planeta kamenistaya"></div>
+        <div class="s-kolcami">
+            <div class="telo"></div>
+            <div class="kolco"></div>
+            <div class="kolco kolco-2"></div>
+        </div>
+        <div class="kometa kometa-1"></div>
+        <div class="kometa kometa-2"></div>
+    </div>
+
+    <div class="container">
+        <div class="shapka-profilya">
+            <img class="mini-avatar" id="mini-avatar" src="/static/avatars/net.png" alt="">
+            <span class="privet" id="privet"></span>
+        </div>
+
+        <h1 class="logo">Фантазариум</h1>
+        <p class="podzagolovok">Одна картинка, тысяча смыслов</p>
+
+        <div class="knopki" style="margin-top: 34px;">
+            <a href="/lobbi" class="knopka knopka-glavnaya" data-t="igrat">Играть</a>
+            <a href="/profil" class="knopka" data-t="profil">Профиль</a>
+            <a href="/pravila" class="knopka" data-t="pravila">Правила</a>
+        </div>
+
+        <a href="/vyhod" class="ssylka-nazad" data-t="vyhod_akk">Выйти из аккаунта</a>
+    </div>
+
+    <script>
+        async function zagruzit() {
+            const otvet = await fetch("/api/profil");
+            const d = await otvet.json();
+
+            if (d.oshibka) {
+                window.location.href = "/vhod";
+                return;
+            }
+
+            document.getElementById("privet").textContent = d.login;
+
+            const avatar = document.getElementById("mini-avatar");
+            if (d.avatar) {
+                avatar.src = "/static/avatars/" + d.avatar;
+            } else {
+                avatar.style.display = "none";
+            }
+        }
+
+        zagruzit();
+    </script>
+
+</body>
+</html>

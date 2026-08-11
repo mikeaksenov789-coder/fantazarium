@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Вход - Фантазариум</title>
     <link rel="stylesheet" href="/static/style.css">
+    <script src="/static/lang.js"></script>
 </head>
 <body>
 
@@ -13,49 +14,46 @@
     <div class="kosmos">
         <div class="planeta ledyanoy"></div>
         <div class="planeta kamenistaya"></div>
-        <div class="planeta zemlepodobnaya"></div>
-        <div class="s-kolcami">
-            <div class="telo"></div>
-            <div class="kolco"></div>
-            <div class="kolco kolco-2"></div>
-        </div>
         <div class="kometa kometa-1"></div>
-        <div class="kometa kometa-2"></div>
-        <div class="sputnik sputnik-1">
-            <div class="panel panel-l"></div>
-            <div class="korpus"></div>
-            <div class="antenna"></div>
-            <div class="panel panel-r"></div>
-        </div>
     </div>
 
     <div class="container">
-        <p class="nadzagolovok">добро пожаловать</p>
-        <h2>Вход в игру</h2>
+        <h2 data-t="vhod">Вход в игру</h2>
 
         <div class="soobshenie" id="soobshenie"></div>
 
         <form class="forma" method="post" action="/vhod">
-            <input type="text" name="login" placeholder="Логин" class="pole" required autocomplete="username">
-            <input type="password" name="parol" placeholder="Пароль" class="pole" required autocomplete="current-password">
-            <button type="submit" class="knopka knopka-glavnaya">Войти</button>
+            <input type="text" name="login" class="pole" required autocomplete="username" data-tp="login">
+            <input type="password" name="parol" class="pole" required autocomplete="current-password" data-tp="parol">
+
+            <p class="podpis-yazyka" data-t="yazyk">Язык игры</p>
+            <select name="yazyk" class="pole vybor-kolody" id="vybor-yazyka">
+                <option value="ru">Русский</option>
+                <option value="en">English</option>
+                <option value="es">Español</option>
+                <option value="de">Deutsch</option>
+                <option value="fr">Français</option>
+                <option value="zh">中文</option>
+            </select>
+
+            <button type="submit" class="knopka knopka-glavnaya" data-t="voyti">Войти</button>
         </form>
 
-        <a href="/registraciya" class="ssylka-nazad">Ещё нет аккаунта? Зарегистрируйся</a>
-
-        <div class="blok-info">
-            <h4>Как начать</h4>
-            <p>Войди в аккаунт, создай комнату и получи код из пяти символов. Отправь его друзьям, они введут код и присоединятся к тебе.</p>
-        </div>
-
-        <p class="podskazka-nizu">Для партии нужно от четырёх до семи игроков.</p>
+        <a href="/registraciya" class="ssylka-nazad" data-t="net_akk">Ещё нет аккаунта?</a>
     </div>
 
     <script>
+        document.getElementById("vybor-yazyka").value = YAZYK;
+
+        document.getElementById("vybor-yazyka").addEventListener("change", function () {
+            document.cookie = "yazyk=" + this.value + "; path=/; max-age=31536000";
+            window.location.reload();
+        });
+
         const parametry = new URLSearchParams(window.location.search);
         if (parametry.get("oshibka") === "1") {
             const blok = document.getElementById("soobshenie");
-            blok.textContent = "Неверный логин или пароль";
+            blok.textContent = t("oshibka_vhod");
             blok.className = "soobshenie soobshenie-vidno";
         }
     </script>

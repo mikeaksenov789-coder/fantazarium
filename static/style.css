@@ -1833,3 +1833,178 @@ h3 {
     .koloda-imya { font-size: 20px; }
     .koloda-opis { font-size: 13px; }
 }
+
+.stol-krug {
+    background:
+        radial-gradient(ellipse at 50% 42%, rgba(160, 130, 240, 0.14), transparent 55%),
+        radial-gradient(ellipse at 50% 50%, #241a52 0%, #1a1140 42%, #100a26 74%, #0a0518 100%);
+    border: 3px solid rgba(180, 150, 250, 0.28);
+    box-shadow:
+        inset 0 0 90px rgba(126, 92, 214, 0.22),
+        inset 0 6px 24px rgba(0, 0, 0, 0.5),
+        0 0 70px rgba(126, 92, 214, 0.18),
+        0 20px 60px rgba(0, 0, 0, 0.65);
+}
+
+.stol-krug::before {
+    content: "";
+    position: absolute;
+    inset: 16px;
+    border-radius: 50%;
+    border: 1px solid rgba(180, 150, 250, 0.14);
+    pointer-events: none;
+}
+
+.stol-krug::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 90px;
+    height: 90px;
+    margin: -45px 0 0 -45px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(245, 217, 138, 0.09), transparent 68%);
+    border: 1px solid rgba(245, 217, 138, 0.16);
+    pointer-events: none;
+}
+
+.avatar {
+    overflow: hidden;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+}
+
+.avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.plitka-avatar {
+    overflow: hidden;
+}
+
+.plitka-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.shapka-profilya {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 22px;
+}
+
+.mini-avatar {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(160, 130, 240, 0.5);
+}
+
+.privet {
+    font-size: 15px;
+    color: #b8aed8;
+}
+
+.bolshoy-avatar-blok {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 14px;
+}
+
+.bolshoy-avatar {
+    width: 116px;
+    height: 116px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid rgba(245, 217, 138, 0.55);
+    box-shadow: 0 0 34px rgba(245, 217, 138, 0.25);
+}
+
+.bukva-avatar {
+    width: 116px;
+    height: 116px;
+    border-radius: 50%;
+    background: linear-gradient(145deg, #3d2a6e, #241548);
+    border: 3px solid rgba(160, 130, 240, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 46px;
+    color: #c4b8e8;
+}
+
+.imya-profilya {
+    font-size: 22px;
+    color: #f5d98a;
+    margin-bottom: 16px;
+}
+
+.forma-avatara { margin-bottom: 28px; }
+
+.knopka-fayl {
+    display: inline-block;
+    padding: 10px 24px;
+    font-size: 14px;
+    font-family: Georgia, serif;
+    color: #d8c4ff;
+    background: rgba(58, 38, 104, 0.85);
+    border: 1px solid rgba(190, 160, 255, 0.5);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background 0.18s;
+}
+
+.knopka-fayl:hover { background: rgba(88, 58, 158, 0.95); }
+.knopka-fayl input { display: none; }
+
+.statistika {
+    display: flex;
+    justify-content: center;
+    gap: clamp(16px, 8vw, 46px);
+    padding: 22px 0;
+    border-top: 1px solid rgba(160, 130, 240, 0.18);
+    border-bottom: 1px solid rgba(160, 130, 240, 0.18);
+}
+
+.stat-blok {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.stat-cifra {
+    font-size: clamp(26px, 8vw, 34px);
+    color: #f5d98a;
+    font-weight: bold;
+}
+
+.stat-podpis {
+    font-size: 12px;
+    color: #7d72ab;
+    letter-spacing: 1px;
+}
+
+.podpis-yazyka {
+    font-size: 13px;
+    color: #7d72ab;
+    letter-spacing: 1px;
+    margin-top: 6px;
+}
+
+.soobshenie-vyhod {
+    background: rgba(76, 26, 44, 0.85);
+    border: 2px solid rgba(230, 110, 150, 0.6);
+    border-radius: 16px;
+    padding: 18px 24px;
+    margin-bottom: 20px;
+    font-size: 19px;
+    color: #f0b8cc;
+}

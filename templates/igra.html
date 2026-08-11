@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Игра - Фантазариум</title>
     <link rel="stylesheet" href="/static/style.css">
+    <script src="/static/lang.js"></script>
 </head>
 <body>
 
@@ -24,9 +25,9 @@
             </div>
             <div class="shapka-taymer" id="shapka-taymer">
                 <span class="shapka-cifry" id="taymer-cifry">120</span>
-                <span class="shapka-sek">сек</span>
+                <span class="shapka-sek" id="podpis-sek">сек</span>
             </div>
-            <button class="knopka-vyhod" onclick="vyyti()">Выйти</button>
+            <button class="knopka-vyhod" onclick="vyyti()" id="knopka-vyhoda"></button>
         </div>
 
         <div class="polosa-vremeni" id="polosa" style="width: 0%"></div>
@@ -37,12 +38,10 @@
             <div class="stol-krug" id="stol-krug"></div>
         </div>
 
-        <div class="stol" id="stol">
-            <p>Загрузка...</p>
-        </div>
+        <div class="stol" id="stol"></div>
 
         <div class="moya-ruka" id="blok-ruki">
-            <h3 class="zagolovok-ruki" id="zagolovok-ruki">Твои карточки</h3>
+            <h3 class="zagolovok-ruki" id="zagolovok-ruki"></h3>
             <div class="setka-kart" id="karty"></div>
             <div class="panel-zameny" id="panel-zameny"></div>
         </div>
@@ -56,7 +55,7 @@
         <div class="modal-okno">
             <div class="modal-taymer" id="modal-taymer">
                 <span class="shapka-cifry" id="modal-cifry">120</span>
-                <span class="shapka-sek">сек</span>
+                <span class="shapka-sek" id="modal-sek">сек</span>
             </div>
             <div class="ryad-prosmotra">
                 <button class="strelka" onclick="listat(-1)">‹</button>
@@ -72,6 +71,9 @@
     <script>
         const kod = window.location.pathname.split("/").pop();
         document.getElementById("kod").textContent = kod;
+        document.getElementById("knopka-vyhoda").textContent = t("vyyti");
+        document.getElementById("podpis-sek").textContent = t("sek");
+        document.getElementById("modal-sek").textContent = t("sek");
 
         let vybrannaya = null;
         let mozhno_vybirat = false;
@@ -91,6 +93,13 @@
 
         let konec_vremeni = null;
         let vsego_sekund = 120;
+
+        function avatar_html(d, login, bukva) {
+            if (d.avatary && d.avatary[login]) {
+                return "<img src='/static/avatars/" + d.avatary[login] + "'>";
+            }
+            return bukva;
+        }
 
         async function obnovit() {
             let d;
@@ -112,7 +121,7 @@
             if (d.vsego_sekund) { vsego_sekund = d.vsego_sekund; }
 
             document.getElementById("raund").textContent =
-                d.status === "konec" ? "Конец" : "Раунд " + d.nomer_raunda;
+                d.status === "konec" ? t("konec_kratko") : t("raund") + " " + d.nomer_raunda;
 
             if (d.ostalos === null || d.ostalos === undefined) {
                 konec_vremeni = null;
@@ -161,17 +170,17 @@
         function status_igroka(d, igrok) {
             if (d.status === "itogi") {
                 return igrok.gotov
-                    ? { klass: "plitka-gotov", znak: "<span class='znak-ok'>готов</span>" }
-                    : { klass: "plitka-zhdem", znak: "<span class='znak-zhdem'>ждём</span>" };
+                    ? { klass: "plitka-gotov", znak: "<span class='znak-ok'>" + t("st_gotov") + "</span>" }
+                    : { klass: "plitka-zhdem", znak: "<span class='znak-zhdem'>" + t("zhdem_metka") + "</span>" };
             }
             if (igrok.login === d.vedushiy) {
-                return { klass: "plitka-vedushiy", znak: "<span class='znak-vedushiy'>ведущий</span>" };
+                return { klass: "plitka-vedushiy", znak: "<span class='znak-vedushiy'>" + t("vedushiy_metka") + "</span>" };
             }
             if (d.zhdem.indexOf(igrok.login) !== -1) {
-                return { klass: "plitka-zhdem", znak: "<span class='znak-zhdem'>ходит</span>" };
+                return { klass: "plitka-zhdem", znak: "<span class='znak-zhdem'>" + t("hodit_metka") + "</span>" };
             }
             if (d.status === "otvety" || d.status === "golosovanie") {
-                return { klass: "plitka-gotov", znak: "<span class='znak-ok'>готов</span>" };
+                return { klass: "plitka-gotov", znak: "<span class='znak-ok'>" + t("st_gotov") + "</span>" };
             }
             return { klass: "", znak: "" };
         }
@@ -184,7 +193,7 @@
                 const bukva = igrok.login.charAt(0).toUpperCase();
 
                 html += "<div class='igrok-plitka " + st.klass + "'>" +
-                        "<div class='plitka-avatar'>" + bukva + "</div>" +
+                        "<div class='plitka-avatar'>" + avatar_html(d, igrok.login, bukva) + "</div>" +
                         "<div class='plitka-imya'>" + igrok.login + "</div>" +
                         "<div class='plitka-ochki'>" + igrok.ochki + "</div>" +
                         "<div class='plitka-znak'>" + st.znak + "</div>" +
@@ -216,26 +225,26 @@
                 if (d.status === "itogi") {
                     if (igrok.gotov) {
                         klass += " mesto-gotov";
-                        bejdzh = "<div class='bejdzh bejdzh-gotov'>ГОТОВ</div>";
+                        bejdzh = "<div class='bejdzh bejdzh-gotov'>" + t("st_gotov") + "</div>";
                     } else {
                         klass += " mesto-zhdem";
-                        bejdzh = "<div class='bejdzh bejdzh-zhdem'>ЖДЁМ</div>";
+                        bejdzh = "<div class='bejdzh bejdzh-zhdem'>" + t("zhdem_metka") + "</div>";
                     }
                 } else if (igrok.login === d.vedushiy) {
                     klass += " mesto-vedushiy";
-                    bejdzh = "<div class='bejdzh bejdzh-hodit'>ВЕДУЩИЙ</div>";
+                    bejdzh = "<div class='bejdzh bejdzh-hodit'>" + t("vedushiy_metka") + "</div>";
                 } else if (d.zhdem.indexOf(igrok.login) !== -1) {
                     klass += " mesto-zhdem";
-                    bejdzh = "<div class='bejdzh bejdzh-zhdem'>ХОДИТ</div>";
+                    bejdzh = "<div class='bejdzh bejdzh-zhdem'>" + t("hodit_metka") + "</div>";
                 } else if (d.status === "otvety" || d.status === "golosovanie") {
                     klass += " mesto-gotov";
-                    bejdzh = "<div class='bejdzh bejdzh-gotov'>ГОТОВ</div>";
+                    bejdzh = "<div class='bejdzh bejdzh-gotov'>" + t("st_gotov") + "</div>";
                 }
 
                 const bukva = igrok.login.charAt(0).toUpperCase();
 
                 html += "<div class='" + klass + "' style='left:" + x + "%; top:" + y + "%;'>" +
-                        "<div class='avatar'>" + bukva + "</div>" +
+                        "<div class='avatar'>" + avatar_html(d, igrok.login, bukva) + "</div>" +
                         "<div class='imya-igroka'>" + igrok.login + "</div>" +
                         "<div class='ochki-igroka'>" + igrok.ochki + "</div>" +
                         bejdzh +
@@ -252,7 +261,16 @@
             let html = "";
 
             if (d.status === "konec") {
-                html = "<h3 class='zagolovok-stola'>Партия окончена</h3><div class='pedestal'>";
+                html = "";
+
+                if (d.ya_vyshel) {
+                    html += "<div class='soobshenie-vyhod'>" + t("igrok_vyshel") + "</div>";
+                    html += "<h3 class='zagolovok-stola'>" + t("tablica_liderov") + "</h3>";
+                } else {
+                    html += "<h3 class='zagolovok-stola'>" + t("partiya_okonchena") + "</h3>";
+                }
+
+                html += "<div class='pedestal'>";
                 for (const igrok of d.tablica) {
                     let klass = "stroka-itoga";
                     let medal = "";
@@ -265,36 +283,46 @@
                 }
                 html += "</div>";
 
-                if (d.ya === d.hozyain) {
-                    html += "<button class='knopka knopka-glavnaya' onclick='igrat_snova()'>Играть снова</button>";
+                if (d.ya_vyshel) {
+                    html += "<a href='/glavnaya' class='knopka knopka-glavnaya'>" + t("na_glavnuyu") + "</a>";
+                } else if (d.ya === d.hozyain) {
+                    html += "<button class='knopka knopka-glavnaya' onclick='igrat_snova()'>" +
+                            t("igrat_snova") + "</button>";
                 } else {
-                    html += "<p class='podzagolovok'>Хозяин может начать новую партию</p>";
+                    html += "<p class='podzagolovok'>" + t("hozyain_nachnet") + "</p>";
                 }
-                html += "<br><a href='/lobbi' class='ssylka-nazad'>Выйти в лобби</a>";
+
+                if (!d.ya_vyshel) {
+                    html += "<br><a href='/lobbi' class='ssylka-nazad'>" + t("vyyti_v_lobbi") + "</a>";
+                }
             }
 
             else if (d.status === "associaciya") {
                 if (d.ya_vedushiy) {
-                    html = "<div class='tablichka-hodit'>Ты ведущий</div>" +
-                        "<p class='podzagolovok'>Выбери карточку и придумай ассоциацию</p>" +
-                        "<input type='text' id='pole-associacii' class='pole' placeholder='Ассоциация' maxlength='80'>" +
-                        "<br><br><button class='knopka knopka-glavnaya' onclick='zagadat()'>Загадать</button>";
+                    html = "<div class='tablichka-hodit'>" + t("ty_vedushiy") + "</div>" +
+                        "<p class='podzagolovok'>" + t("vyberi_i_pridumay") + "</p>" +
+                        "<input type='text' id='pole-associacii' class='pole' placeholder='" +
+                        t("associaciya") + "' maxlength='80'>" +
+                        "<br><br><button class='knopka knopka-glavnaya' onclick='zagadat()'>" +
+                        t("zagadat") + "</button>";
                 } else {
-                    html = "<div class='tablichka-hodit'>Ходит " + d.vedushiy + "</div>" +
-                        "<p class='podzagolovok'>Придумывает ассоциацию...</p>";
+                    html = "<div class='tablichka-hodit'>" + t("hodit") + " " + d.vedushiy + "</div>" +
+                        "<p class='podzagolovok'>" + t("pridumyvaet") + "</p>";
                 }
             }
 
             else if (d.status === "otvety") {
                 html = "<div class='associaciya'>" + d.associaciya + "</div>";
                 if (d.ya_vedushiy) {
-                    html += "<p class='podzagolovok'>Сдали: " + d.sdali + " из " + d.igroki.length + "</p>";
+                    html += "<p class='podzagolovok'>" + t("sdali") + " " + d.sdali +
+                            " " + t("iz") + " " + d.igroki.length + "</p>";
                 } else if (d.ya_sdal) {
-                    html += "<p class='podzagolovok'>Ты сдал карточку. Сдали: " + d.sdali +
-                            " из " + d.igroki.length + "</p>";
+                    html += "<p class='podzagolovok'>" + t("ty_sdal") + " " + d.sdali +
+                            " " + t("iz") + " " + d.igroki.length + "</p>";
                 } else {
-                    html += "<div class='tablichka-hodit'>Твой ход</div>" +
-                            "<button class='knopka knopka-glavnaya' onclick='sdat()'>Сдать карточку</button>";
+                    html += "<div class='tablichka-hodit'>" + t("tvoy_hod") + "</div>" +
+                            "<button class='knopka knopka-glavnaya' onclick='sdat()'>" +
+                            t("sdat_kartochku") + "</button>";
                 }
             }
 
@@ -302,15 +330,15 @@
                 html = "<div class='associaciya'>" + d.associaciya + "</div>";
 
                 if (d.ya_vedushiy) {
-                    html += "<p class='podzagolovok'>Проголосовали: " + d.progolosovali +
-                            " из " + d.vsego_golosuet + "</p>";
+                    html += "<p class='podzagolovok'>" + t("progolosovali") + " " + d.progolosovali +
+                            " " + t("iz") + " " + d.vsego_golosuet + "</p>";
                 } else if (!d.ya_mogu_golosovat) {
-                    html += "<div class='ne-golosuet'>Ты не успел сдать карточку, в этом раунде не голосуешь</div>";
+                    html += "<div class='ne-golosuet'>" + t("ne_uspel") + "</div>";
                 } else if (d.ya_golosoval) {
-                    html += "<p class='podzagolovok'>Ты проголосовал. Проголосовали: " +
-                            d.progolosovali + " из " + d.vsego_golosuet + "</p>";
+                    html += "<p class='podzagolovok'>" + t("ty_progolosoval") + " " + d.progolosovali +
+                            " " + t("iz") + " " + d.vsego_golosuet + "</p>";
                 } else {
-                    html += "<div class='tablichka-hodit'>Угадай карточку ведущего</div>";
+                    html += "<div class='tablichka-hodit'>" + t("ugaday") + "</div>";
                 }
 
                 html += "<div class='setka-stola'>";
@@ -325,7 +353,7 @@
             }
 
             else if (d.status === "itogi") {
-                html = "<h3 class='zagolovok-stola'>Итоги раунда</h3>" +
+                html = "<h3 class='zagolovok-stola'>" + t("itogi_raunda") + "</h3>" +
                        "<div class='associaciya'>" + d.associaciya + "</div><div class='setka-stola'>";
                 for (let i = 0; i < d.itogi.length; i++) {
                     const k = d.itogi[i];
@@ -342,13 +370,12 @@
                 }
                 html += "</div><br>";
 
-                html += "<p class='podzagolovok'>Готовы " + d.gotovyh + " из " + d.igroki.length + "</p>";
+                html += "<p class='podzagolovok'>" + t("gotovy") + ": " + d.gotovyh +
+                        " " + t("iz") + " " + d.igroki.length + "</p>";
 
-                if (d.ya_gotov) {
-                    html += "<button class='knopka knopka-otmena-gotov' onclick='gotovnost()'>Я не готов</button>";
-                } else {
-                    html += "<button class='knopka knopka-gotov' onclick='gotovnost()'>Готов</button>";
-                }
+                html += d.ya_gotov
+                    ? "<button class='knopka knopka-otmena-gotov' onclick='gotovnost()'>" + t("ne_gotov_knopka") + "</button>"
+                    : "<button class='knopka knopka-gotov' onclick='gotovnost()'>" + t("gotov") + "</button>";
             }
 
             if (html !== proshlyy_stol) {
@@ -371,7 +398,7 @@
                 (d.status === "otvety" && !d.ya_vedushiy && !d.ya_sdal);
 
             document.getElementById("zagolovok-ruki").textContent =
-                mozhno_vybirat ? "Твои карточки, нажми чтобы открыть" : "Твои карточки";
+                mozhno_vybirat ? t("nazhmi_otkryt") : t("tvoi_kartochki");
 
             const noviy_klyuch = d.moi_karty.join(",");
 
@@ -405,13 +432,13 @@
             let html = "";
 
             if ((d.status === "associaciya" || d.status === "otvety") && !d.ya_sdal) {
-                html += "<span class='moi-ochki'>Очки: " + d.moi_ochki + "</span>";
+                html += "<span class='moi-ochki'>" + t("ochki") + ": " + d.moi_ochki + "</span>";
 
                 if (d.mogu_zamenit) {
                     html += "<button class='knopka-zamena' onclick='zamenit()'>" +
-                            "Заменить карточки за " + d.cena_zameny + "</button>";
+                            t("zamenit_za") + " " + d.cena_zameny + "</button>";
                 } else if (d.moi_ochki < d.cena_zameny) {
-                    html += "<span class='moi-ochki'>Замена стоит " + d.cena_zameny + "</span>";
+                    html += "<span class='moi-ochki'>" + t("zamena_stoit") + " " + d.cena_zameny + "</span>";
                 }
             }
 
@@ -429,7 +456,7 @@
                 for (const kogo of d.zhdem) {
                     if (kogo !== d.ya) {
                         html += "<button class='knopka-malenkaya knopka-opasnaya' onclick='propustit(\"" +
-                                kogo + "\")'>Исключить " + kogo + "</button>";
+                                kogo + "\")'>" + t("isklyuchit") + " " + kogo + "</button>";
                     }
                 }
             }
@@ -442,7 +469,7 @@
 
         async function zamenit() {
             const d = posledniye_dannye;
-            if (!confirm("Заменить все карточки за " + d.cena_zameny + " очков?")) { return; }
+            if (!confirm(t("podtverdit_zamenu") + " " + d.cena_zameny + "?")) { return; }
 
             const f = new FormData();
             f.append("kod", kod);
@@ -504,7 +531,7 @@
             document.getElementById("modal-karta").src = "/static/cards/" + tekushaya.fayl;
 
             document.getElementById("schetchik").textContent =
-                (tekushiy_index + 1) + " из " + spisok_prosmotra.length;
+                (tekushiy_index + 1) + " / " + spisok_prosmotra.length;
 
             let tochki = "";
             for (let i = 0; i < spisok_prosmotra.length; i++) {
@@ -515,11 +542,13 @@
 
             let knopki = "";
             if (rezhim_prosmotra === "vybor" && tekushaya.mozhno) {
-                knopki = "<button class='knopka knopka-glavnaya' onclick='podtverdit_vybor()'>Выбрать эту</button>";
+                knopki = "<button class='knopka knopka-glavnaya' onclick='podtverdit_vybor()'>" +
+                         t("vybrat_etu") + "</button>";
             } else if (rezhim_prosmotra === "golos" && tekushaya.mozhno) {
-                knopki = "<button class='knopka knopka-glavnaya' onclick='podtverdit_golos()'>Голосовать</button>";
+                knopki = "<button class='knopka knopka-glavnaya' onclick='podtverdit_golos()'>" +
+                         t("golosovat") + "</button>";
             }
-            knopki += "<button class='knopka' onclick='zakryt_modal()'>Закрыть</button>";
+            knopki += "<button class='knopka' onclick='zakryt_modal()'>" + t("zakryt") + "</button>";
             document.getElementById("modal-knopki").innerHTML = knopki;
         }
 
@@ -566,8 +595,8 @@
         async function zagadat() {
             const pole = document.getElementById("pole-associacii");
             const text = pole.value.trim();
-            if (vybrannaya === null) { alert("Сначала выбери карточку"); return; }
-            if (text.length === 0) { alert("Напиши ассоциацию"); return; }
+            if (vybrannaya === null) { alert(t("vyberi_i_pridumay")); return; }
+            if (text.length === 0) { alert(t("associaciya")); return; }
 
             const f = new FormData();
             f.append("kod", kod);
@@ -580,7 +609,7 @@
         }
 
         async function sdat() {
-            if (vybrannaya === null) { alert("Сначала выбери карточку"); return; }
+            if (vybrannaya === null) { alert(t("tvoi_kartochki")); return; }
             const f = new FormData();
             f.append("kod", kod);
             f.append("karta", vybrannaya);
@@ -598,15 +627,16 @@
         }
 
         async function vyyti() {
-            if (!confirm("Точно выйти из игры?")) { return; }
+            if (!confirm(t("tochno_vyyti"))) { return; }
             const f = new FormData();
             f.append("kod", kod);
             await fetch("/vyyti_iz_igry", { method: "POST", body: f });
-            window.location.href = "/lobbi";
+            proshlyy_stol = "";
+            obnovit();
         }
 
         async function propustit(kogo) {
-            if (!confirm("Исключить игрока " + kogo + "?")) { return; }
+            if (!confirm(t("isklyuchit") + " " + kogo + "?")) { return; }
             const f = new FormData();
             f.append("kod", kod);
             f.append("kogo", kogo);

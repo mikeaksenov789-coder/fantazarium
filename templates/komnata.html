@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Комната - Фантазариум</title>
     <link rel="stylesheet" href="/static/style.css">
+    <script src="/static/lang.js"></script>
 </head>
 <body>
 
@@ -17,42 +18,38 @@
     </div>
 
     <div class="container">
-        <p class="nadzagolovok" id="tip-komnaty">зал ожидания</p>
-        <h2>Комната</h2>
+        <p class="nadzagolovok" id="tip-komnaty"></p>
+        <h2 data-t="komnata">Комната</h2>
 
         <div class="plashka-koloda" id="plashka-koloda"></div>
 
         <div class="kod-komnaty" id="kod">.....</div>
-        <button class="knopka-kopirovat" onclick="skopirovat()" id="knopka-kopii">Скопировать ссылку</button>
+        <button class="knopka-kopirovat" onclick="skopirovat()" id="knopka-kopii"></button>
 
-        <h3 class="zagolovok-spiska">Игроки</h3>
+        <h3 class="zagolovok-spiska" data-t="igroki">Игроки</h3>
 
-        <div class="spisok-igrokov" id="spisok">
-            <p>Загрузка...</p>
-        </div>
+        <div class="spisok-igrokov" id="spisok"></div>
 
         <p class="podskazka" id="podskazka"></p>
 
         <div class="knopki" id="mesto-knopki"></div>
 
-        <div class="blok-info" id="blok-podskazki"></div>
-
-        <a href="/lobbi" class="ssylka-nazad">Выйти</a>
+        <a href="/lobbi" class="ssylka-nazad" data-t="vyyti">Выйти</a>
     </div>
 
     <script>
         const kod = window.location.pathname.split("/").pop();
         document.getElementById("kod").textContent = kod;
+        document.getElementById("knopka-kopii").textContent = t("kopirovat");
 
         let proshlyy_spisok = "";
         let proshlaya_knopka = "";
-        let proshlaya_info = "";
 
         function skopirovat() {
             navigator.clipboard.writeText(window.location.href);
             const k = document.getElementById("knopka-kopii");
-            k.textContent = "Ссылка скопирована";
-            setTimeout(function () { k.textContent = "Скопировать ссылку"; }, 2000);
+            k.textContent = t("skopirovano");
+            setTimeout(function () { k.textContent = t("kopirovat"); }, 2000);
         }
 
         async function obnovit() {
@@ -60,7 +57,7 @@
             const d = await otvet.json();
 
             if (d.oshibka) {
-                document.getElementById("spisok").innerHTML = "<p>Комната не найдена</p>";
+                document.getElementById("spisok").innerHTML = "<p>" + t("oshibka_kod") + "</p>";
                 return;
             }
 
@@ -70,11 +67,11 @@
             }
 
             document.getElementById("tip-komnaty").textContent =
-                d.publichnaya ? "открытая комната" : "закрытая комната";
+                d.publichnaya ? t("otkrytaya") : t("zakrytaya");
 
-            document.getElementById("plashka-koloda").textContent = d.koloda_nazvanie;
-            document.getElementById("plashka-koloda").className =
-                "plashka-koloda plashka-" + d.koloda;
+            const plashka = document.getElementById("plashka-koloda");
+            plashka.textContent = t(d.koloda);
+            plashka.className = "plashka-koloda plashka-" + d.koloda;
 
             let html = "";
             for (const igrok of d.igroki) {
@@ -84,12 +81,12 @@
                 html += "<div class='levaya-igroka'>";
                 html += "<span class='imya-v-spiske'>" + igrok.login + "</span>";
                 if (igrok.login === d.hozyain) {
-                    html += "<span class='metka-hozyain'>хозяин</span>";
+                    html += "<span class='metka-hozyain'>" + t("hozyain") + "</span>";
                 }
                 html += "</div>";
                 html += igrok.gotov
-                    ? "<div class='plashka-status plashka-gotov'>готов</div>"
-                    : "<div class='plashka-status plashka-zhdem'>не готов</div>";
+                    ? "<div class='plashka-status plashka-gotov'>" + t("st_gotov") + "</div>"
+                    : "<div class='plashka-status plashka-zhdem'>" + t("st_ne_gotov") + "</div>";
                 html += "</div>";
             }
 
@@ -102,45 +99,31 @@
             const podskazka = document.getElementById("podskazka");
 
             if (skolko < 4) {
-                podskazka.textContent = "Нужно минимум 4 игрока. Сейчас: " + skolko + " из " + d.maks;
+                podskazka.textContent = t("nuzhno_igrokov") + " " + skolko;
                 podskazka.className = "podskazka";
             } else if (!d.vse_gotovy) {
-                podskazka.textContent = "Готовы " + d.gotovyh + " из " + skolko;
+                podskazka.textContent = t("gotovy") + ": " + d.gotovyh + " " + t("iz") + " " + skolko;
                 podskazka.className = "podskazka";
             } else {
-                podskazka.textContent = "Все готовы! Можно начинать";
+                podskazka.textContent = t("vse_gotovy");
                 podskazka.className = "podskazka podskazka-gotovo";
             }
 
             let knopka = "";
             knopka += d.ya_gotov
-                ? "<button class='knopka knopka-otmena-gotov' onclick='gotovnost()'>Я не готов</button>"
-                : "<button class='knopka knopka-gotov' onclick='gotovnost()'>Готов</button>";
+                ? "<button class='knopka knopka-otmena-gotov' onclick='gotovnost()'>" + t("ne_gotov_knopka") + "</button>"
+                : "<button class='knopka knopka-gotov' onclick='gotovnost()'>" + t("gotov") + "</button>";
 
             if (d.ya === d.hozyain && skolko >= 4 && d.vse_gotovy) {
                 knopka += "<form method='post' action='/nachat_igru'>" +
                           "<input type='hidden' name='kod' value='" + kod + "'>" +
-                          "<button type='submit' class='knopka knopka-glavnaya'>Начать игру</button></form>";
+                          "<button type='submit' class='knopka knopka-glavnaya'>" +
+                          t("nachat_igru") + "</button></form>";
             }
 
             if (knopka !== proshlaya_knopka) {
                 document.getElementById("mesto-knopki").innerHTML = knopka;
                 proshlaya_knopka = knopka;
-            }
-
-            let info = "";
-            if (d.publichnaya) {
-                info = "<h4>Открытая комната</h4>" +
-                       "<p>Сюда может зайти любой игрок, выбравший эту же колоду. " +
-                       "Если ждать надоело, отправь код друзьям, они зайдут по нему.</p>";
-            } else {
-                info = "<h4>Закрытая комната</h4>" +
-                       "<p>Никто посторонний не зайдёт. Отправь друзьям код или ссылку на эту страницу.</p>";
-            }
-
-            if (info !== proshlaya_info) {
-                document.getElementById("blok-podskazki").innerHTML = info;
-                proshlaya_info = info;
             }
         }
 
