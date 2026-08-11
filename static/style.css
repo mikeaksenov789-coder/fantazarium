@@ -1488,3 +1488,230 @@ h3 {
     font-size: 15px;
     color: #ffc4a6;
 }
+
+.igrovoy-ekran {
+    gap: 12px;
+}
+
+.shapka {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: rgba(10, 6, 24, 0.97);
+    border: 1px solid rgba(160, 130, 240, 0.3);
+    border-radius: 14px;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: nowrap;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.6);
+}
+
+.shapka-levo {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    min-width: 0;
+}
+
+.shapka-kod {
+    font-size: 16px;
+    letter-spacing: 3px;
+    color: #f5d98a;
+    font-weight: bold;
+}
+
+.shapka-raund {
+    font-size: 13px;
+    color: #a99fd0;
+    white-space: nowrap;
+}
+
+.shapka-taymer {
+    display: none;
+    align-items: baseline;
+    gap: 5px;
+    padding: 5px 14px;
+    border-radius: 10px;
+    background: rgba(24, 60, 50, 0.85);
+    border: 1px solid rgba(126, 232, 192, 0.5);
+    flex-shrink: 0;
+}
+
+.shapka-taymer-vidno { display: flex; }
+
+.shapka-cifry {
+    font-size: 22px;
+    font-weight: bold;
+    color: #7ee8c0;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+}
+
+.shapka-sek {
+    font-size: 11px;
+    color: #7fbfa8;
+    letter-spacing: 1px;
+}
+
+.taymer-zh {
+    background: rgba(70, 52, 18, 0.85);
+    border-color: rgba(255, 196, 110, 0.6);
+}
+.taymer-zh .shapka-cifry { color: #ffc46e; }
+.taymer-zh .shapka-sek { color: #c9a06a; }
+
+.taymer-kr {
+    background: rgba(72, 18, 24, 0.9);
+    border-color: rgba(255, 138, 138, 0.75);
+}
+.taymer-kr .shapka-cifry { color: #ff8a8a; }
+.taymer-kr .shapka-sek { color: #c98a8a; }
+
+.knopka-vyhod {
+    padding: 7px 14px;
+    font-size: 12px;
+    flex-shrink: 0;
+}
+
+.obertka-taymera { display: none; }
+
+.polosa-vremeni {
+    height: 3px;
+    background: rgba(126, 232, 192, 0.85);
+    border-radius: 2px;
+    width: 100%;
+    transition: width 1s linear, background 0.3s;
+}
+
+.polosa-zh { background: rgba(255, 196, 110, 0.9); }
+.polosa-kr { background: rgba(255, 138, 138, 0.95); }
+
+.lenta-igrokov {
+    display: none;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 4px 2px 8px;
+    scrollbar-width: none;
+}
+
+.lenta-igrokov::-webkit-scrollbar { display: none; }
+
+.igrok-plitka {
+    flex-shrink: 0;
+    width: 76px;
+    background: rgba(20, 12, 45, 0.85);
+    border: 1px solid rgba(160, 130, 240, 0.28);
+    border-radius: 12px;
+    padding: 8px 4px;
+    text-align: center;
+}
+
+.plitka-vedushiy {
+    border-color: #ffe9a8;
+    background: rgba(66, 50, 18, 0.85);
+}
+
+.plitka-gotov { border-color: rgba(126, 232, 192, 0.65); }
+.plitka-zhdem { border-color: rgba(240, 150, 110, 0.7); }
+
+.plitka-avatar {
+    width: 30px;
+    height: 30px;
+    margin: 0 auto 4px;
+    border-radius: 50%;
+    background: linear-gradient(145deg, #3d2a6e, #241548);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    color: #c4b8e8;
+}
+
+.plitka-vedushiy .plitka-avatar {
+    background: linear-gradient(145deg, #8a6c24, #4a3810);
+    color: #fff6d8;
+}
+
+.plitka-imya {
+    font-size: 10px;
+    color: #b8aed8;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.plitka-ochki {
+    font-size: 13px;
+    color: #f5d98a;
+    font-weight: bold;
+}
+
+.plitka-znak {
+    font-size: 9px;
+    margin-top: 2px;
+    letter-spacing: 0.5px;
+}
+
+.znak-vedushiy { color: #ffe9a8; font-weight: bold; }
+.znak-ok { color: #7ee8c0; }
+.znak-zhdem { color: #f0966e; }
+
+.modal-taymer {
+    display: none;
+    align-items: baseline;
+    gap: 6px;
+    padding: 6px 16px;
+    border-radius: 10px;
+    background: rgba(24, 60, 50, 0.9);
+    border: 1px solid rgba(126, 232, 192, 0.5);
+}
+
+.modal-taymer-vidno { display: flex; }
+
+.modal-taymer .shapka-cifry { font-size: 20px; }
+
+.stol { padding: 20px 14px; min-height: 0; }
+
+@media (max-width: 900px) {
+    .pole-igry { display: none; }
+    .lenta-igrokov { display: flex; }
+
+    body { padding: 8px; }
+    .igrovoy-ekran { gap: 10px; }
+
+    .shapka { padding: 8px 12px; gap: 8px; border-radius: 12px; }
+    .shapka-levo { gap: 8px; }
+    .shapka-kod { font-size: 14px; letter-spacing: 2px; }
+    .shapka-raund { font-size: 11px; }
+    .shapka-taymer { padding: 4px 10px; }
+    .shapka-cifry { font-size: 19px; }
+    .knopka-vyhod { padding: 6px 10px; font-size: 11px; }
+
+    .stol { padding: 16px 10px; border-radius: 18px; }
+
+    .associaciya { font-size: 21px; padding: 12px 18px; margin: 8px 0; }
+    .tablichka-hodit { font-size: 16px; padding: 9px 18px; margin-bottom: 8px; }
+    .zagolovok-ruki { font-size: 14px; margin-bottom: 8px; }
+
+    .setka-kart { gap: 7px; }
+    .karta-stola { width: calc(33.333% - 10px); max-width: 100px; }
+    .blok-itoga { max-width: 100px; }
+    .setka-stola { gap: 10px; margin-top: 12px; }
+    .avtor { font-size: 12px; margin-top: 5px; }
+    .golosa { font-size: 10px; }
+
+    .panel-zameny { margin-top: 10px; gap: 10px; }
+    .knopka-zamena { padding: 8px 16px; font-size: 12px; }
+    .moi-ochki { font-size: 12px; }
+}
+
+@media (max-width: 420px) {
+    .igrok-plitka { width: 66px; padding: 6px 3px; }
+    .plitka-avatar { width: 26px; height: 26px; font-size: 12px; }
+    .plitka-imya { font-size: 9px; }
+    .karta-stola { width: calc(33.333% - 8px); max-width: 88px; }
+    .blok-itoga { max-width: 88px; }
+}

@@ -12,28 +12,26 @@
 
     <div class="kosmos">
         <div class="planeta gazoviy"></div>
-        <div class="planeta ledyanoy"></div>
         <div class="kometa kometa-2"></div>
     </div>
 
     <div class="igrovoy-ekran">
 
-        <div class="verh-panel">
-            <div class="levaya-chast">
-                <span class="malenkiy-kod" id="kod">.....</span>
-                <span class="nomer-raunda" id="raund"></span>
+        <div class="shapka">
+            <div class="shapka-levo">
+                <span class="shapka-kod" id="kod">.....</span>
+                <span class="shapka-raund" id="raund"></span>
             </div>
-            <button class="knopka-vyhod" onclick="vyyti()">Выйти из игры</button>
+            <div class="shapka-taymer" id="shapka-taymer">
+                <span class="shapka-cifry" id="taymer-cifry">120</span>
+                <span class="shapka-sek">сек</span>
+            </div>
+            <button class="knopka-vyhod" onclick="vyyti()">Выйти</button>
         </div>
 
-        <div class="obertka-taymera">
-            <div class="bolshoy-taymer" id="bolshoy-taymer">
-                <span class="taymer-podpis" id="taymer-podpis">Осталось</span>
-                <span class="taymer-cifry" id="taymer-cifry">45</span>
-                <span class="taymer-podpis">сек</span>
-                <div class="taymer-polosa" id="taymer-polosa"></div>
-            </div>
-        </div>
+        <div class="polosa-vremeni" id="polosa" style="width: 0%"></div>
+
+        <div class="lenta-igrokov" id="lenta"></div>
 
         <div class="pole-igry">
             <div class="stol-krug" id="stol-krug"></div>
@@ -56,6 +54,10 @@
     <div class="modal" id="modal">
         <div class="modal-fon" onclick="zakryt_modal()"></div>
         <div class="modal-okno">
+            <div class="modal-taymer" id="modal-taymer">
+                <span class="shapka-cifry" id="modal-cifry">120</span>
+                <span class="shapka-sek">сек</span>
+            </div>
             <div class="ryad-prosmotra">
                 <button class="strelka" onclick="listat(-1)">‹</button>
                 <img class="modal-karta" id="modal-karta" src="">
@@ -73,12 +75,14 @@
 
         let vybrannaya = null;
         let mozhno_vybirat = false;
-        let proshlyy_stol = "";
-        let proshlye_karty = "";
-        let proshlyy_niz = "";
-        let proshlie_mesta = "";
-        let proshlaya_zamena = "";
         let posledniye_dannye = null;
+
+        let proshlyy_stol = "";
+        let proshlyy_niz = "";
+        let proshlaya_zamena = "";
+        let proshlie_mesta = "";
+        let proshlaya_lenta = "";
+        let klyuch_ruki = "";
 
         let modal_otkryt = false;
         let spisok_prosmotra = [];
@@ -86,11 +90,16 @@
         let rezhim_prosmotra = "prosmotr";
 
         let konec_vremeni = null;
-        let faza_taymera = "";
+        let vsego_sekund = 120;
 
         async function obnovit() {
-            const otvet = await fetch("/api/igra/" + kod);
-            const d = await otvet.json();
+            let d;
+            try {
+                const otvet = await fetch("/api/igra/" + kod);
+                d = await otvet.json();
+            } catch (e) {
+                return;
+            }
             if (d.oshibka) { return; }
 
             if (d.status === "ozhidanie") {
@@ -100,17 +109,19 @@
 
             posledniye_dannye = d;
 
+            if (d.vsego_sekund) { vsego_sekund = d.vsego_sekund; }
+
             document.getElementById("raund").textContent =
-                d.status === "konec" ? "Партия окончена" : "Раунд " + d.nomer_raunda;
+                d.status === "konec" ? "Конец" : "Раунд " + d.nomer_raunda;
 
             if (d.ostalos === null || d.ostalos === undefined) {
                 konec_vremeni = null;
             } else {
                 konec_vremeni = Date.now() + d.ostalos * 1000;
-                faza_taymera = d.status;
             }
             narisovat_taymer();
 
+            narisovat_lentu(d);
             narisovat_mesta(d);
             narisovat_stol(d);
             narisovat_karty(d);
@@ -119,24 +130,71 @@
         }
 
         function narisovat_taymer() {
-            const blok = document.getElementById("bolshoy-taymer");
+            const blok = document.getElementById("shapka-taymer");
+            const polosa = document.getElementById("polosa");
+            const mod = document.getElementById("modal-taymer");
 
             if (konec_vremeni === null) {
-                blok.className = "bolshoy-taymer";
+                blok.className = "shapka-taymer";
+                mod.className = "modal-taymer";
+                polosa.style.width = "0%";
                 return;
             }
 
             const ostalos = Math.max(0, Math.ceil((konec_vremeni - Date.now()) / 1000));
 
             document.getElementById("taymer-cifry").textContent = ostalos;
-            document.getElementById("taymer-podpis").textContent =
-                faza_taymera === "golosovanie" ? "На голосование" : "На выбор карты";
-            document.getElementById("taymer-polosa").style.width = (ostalos / 45 * 100) + "%";
+            document.getElementById("modal-cifry").textContent = ostalos;
 
-            let klass = "bolshoy-taymer bolshoy-taymer-vidno";
-            if (ostalos <= 10) { klass += " taymer-krasnyy"; }
-            else if (ostalos <= 20) { klass += " taymer-zheltyy"; }
-            blok.className = klass;
+            let dop = "";
+            let dop_polosa = "";
+            if (ostalos <= 15) { dop = " taymer-kr"; dop_polosa = " polosa-kr"; }
+            else if (ostalos <= 40) { dop = " taymer-zh"; dop_polosa = " polosa-zh"; }
+
+            blok.className = "shapka-taymer shapka-taymer-vidno" + dop;
+            mod.className = modal_otkryt ? "modal-taymer modal-taymer-vidno" + dop : "modal-taymer";
+
+            polosa.className = "polosa-vremeni" + dop_polosa;
+            polosa.style.width = (ostalos / vsego_sekund * 100) + "%";
+        }
+
+        function status_igroka(d, igrok) {
+            if (d.status === "itogi") {
+                return igrok.gotov
+                    ? { klass: "plitka-gotov", znak: "<span class='znak-ok'>готов</span>" }
+                    : { klass: "plitka-zhdem", znak: "<span class='znak-zhdem'>ждём</span>" };
+            }
+            if (igrok.login === d.vedushiy) {
+                return { klass: "plitka-vedushiy", znak: "<span class='znak-vedushiy'>ведущий</span>" };
+            }
+            if (d.zhdem.indexOf(igrok.login) !== -1) {
+                return { klass: "plitka-zhdem", znak: "<span class='znak-zhdem'>ходит</span>" };
+            }
+            if (d.status === "otvety" || d.status === "golosovanie") {
+                return { klass: "plitka-gotov", znak: "<span class='znak-ok'>готов</span>" };
+            }
+            return { klass: "", znak: "" };
+        }
+
+        function narisovat_lentu(d) {
+            let html = "";
+
+            for (const igrok of d.igroki) {
+                const st = status_igroka(d, igrok);
+                const bukva = igrok.login.charAt(0).toUpperCase();
+
+                html += "<div class='igrok-plitka " + st.klass + "'>" +
+                        "<div class='plitka-avatar'>" + bukva + "</div>" +
+                        "<div class='plitka-imya'>" + igrok.login + "</div>" +
+                        "<div class='plitka-ochki'>" + igrok.ochki + "</div>" +
+                        "<div class='plitka-znak'>" + st.znak + "</div>" +
+                        "</div>";
+            }
+
+            if (html !== proshlaya_lenta) {
+                document.getElementById("lenta").innerHTML = html;
+                proshlaya_lenta = html;
+            }
         }
 
         function narisovat_mesta(d) {
@@ -217,8 +275,8 @@
 
             else if (d.status === "associaciya") {
                 if (d.ya_vedushiy) {
-                    html = "<div class='tablichka-hodit'>Твой ход, ты ведущий</div>" +
-                        "<p class='podzagolovok'>Выбери карточку внизу и придумай ассоциацию</p>" +
+                    html = "<div class='tablichka-hodit'>Ты ведущий</div>" +
+                        "<p class='podzagolovok'>Выбери карточку и придумай ассоциацию</p>" +
                         "<input type='text' id='pole-associacii' class='pole' placeholder='Ассоциация' maxlength='80'>" +
                         "<br><br><button class='knopka knopka-glavnaya' onclick='zagadat()'>Загадать</button>";
                 } else {
@@ -230,14 +288,12 @@
             else if (d.status === "otvety") {
                 html = "<div class='associaciya'>" + d.associaciya + "</div>";
                 if (d.ya_vedushiy) {
-                    html += "<p class='podzagolovok'>Сдали: " + d.sdali + " из " + d.igroki.length +
-                            ". Кто не успеет, пропустит раунд и не будет голосовать</p>";
+                    html += "<p class='podzagolovok'>Сдали: " + d.sdali + " из " + d.igroki.length + "</p>";
                 } else if (d.ya_sdal) {
                     html += "<p class='podzagolovok'>Ты сдал карточку. Сдали: " + d.sdali +
                             " из " + d.igroki.length + "</p>";
                 } else {
                     html += "<div class='tablichka-hodit'>Твой ход</div>" +
-                            "<p class='podzagolovok'>Успей выбрать карточку, иначе пропустишь раунд</p>" +
                             "<button class='knopka knopka-glavnaya' onclick='sdat()'>Сдать карточку</button>";
                 }
             }
@@ -249,15 +305,12 @@
                     html += "<p class='podzagolovok'>Проголосовали: " + d.progolosovali +
                             " из " + d.vsego_golosuet + "</p>";
                 } else if (!d.ya_mogu_golosovat) {
-                    html += "<div class='ne-golosuet'>Ты не успел сдать карточку, в этом раунде не голосуешь</div>" +
-                            "<p class='podzagolovok'>Проголосовали: " + d.progolosovali +
-                            " из " + d.vsego_golosuet + "</p>";
+                    html += "<div class='ne-golosuet'>Ты не успел сдать карточку, в этом раунде не голосуешь</div>";
                 } else if (d.ya_golosoval) {
                     html += "<p class='podzagolovok'>Ты проголосовал. Проголосовали: " +
                             d.progolosovali + " из " + d.vsego_golosuet + "</p>";
                 } else {
-                    html += "<div class='tablichka-hodit'>Твой ход</div>" +
-                            "<p class='podzagolovok'>Угадай карточку ведущего</p>";
+                    html += "<div class='tablichka-hodit'>Угадай карточку ведущего</div>";
                 }
 
                 html += "<div class='setka-stola'>";
@@ -266,7 +319,7 @@
                     let klass = "karta-stola";
                     if (k.moya) { klass += " karta-moya"; }
                     html += "<img src='/static/cards/" + k.karta + "' class='" + klass +
-                            "' onclick='otkryt_stol(" + i + ")'>";
+                            "' decoding='async' onclick='otkryt_stol(" + i + ")'>";
                 }
                 html += "</div>";
             }
@@ -279,7 +332,7 @@
                     let klass = "karta-stola";
                     if (k.eto_vedushego) { klass += " karta-pravilnaya"; }
                     html += "<div class='blok-itoga'><img src='/static/cards/" + k.karta +
-                            "' class='" + klass + "' onclick='otkryt_itogi(" + i + ")'>" +
+                            "' class='" + klass + "' decoding='async' onclick='otkryt_itogi(" + i + ")'>" +
                             "<div class='avtor'>" + k.avtor +
                             (k.eto_vedushego ? " ★" : "") + "</div>";
                     if (k.golosovali.length > 0) {
@@ -294,7 +347,7 @@
                 if (d.ya_gotov) {
                     html += "<button class='knopka knopka-otmena-gotov' onclick='gotovnost()'>Я не готов</button>";
                 } else {
-                    html += "<button class='knopka knopka-gotov' onclick='gotovnost()'>Готов к следующему раунду</button>";
+                    html += "<button class='knopka knopka-gotov' onclick='gotovnost()'>Готов</button>";
                 }
             }
 
@@ -318,38 +371,47 @@
                 (d.status === "otvety" && !d.ya_vedushiy && !d.ya_sdal);
 
             document.getElementById("zagolovok-ruki").textContent =
-                mozhno_vybirat ? "Твои карточки, нажми чтобы рассмотреть" : "Твои карточки";
+                mozhno_vybirat ? "Твои карточки, нажми чтобы открыть" : "Твои карточки";
 
-            let html = "";
-            for (let i = 0; i < d.moi_karty.length; i++) {
-                const karta = d.moi_karty[i];
-                let klass = "karta";
-                if (karta === vybrannaya) { klass += " karta-vybrana"; }
-                if (!mozhno_vybirat) { klass += " karta-neaktivna"; }
-                html += "<img src='/static/cards/" + karta + "' class='" + klass +
-                        "' onclick='otkryt_ruku(" + i + ")'>";
+            const noviy_klyuch = d.moi_karty.join(",");
+
+            if (noviy_klyuch !== klyuch_ruki) {
+                let html = "";
+                for (let i = 0; i < d.moi_karty.length; i++) {
+                    html += "<img src='/static/cards/" + d.moi_karty[i] +
+                            "' class='karta' decoding='async' onclick='otkryt_ruku(" + i + ")'>";
+                }
+                document.getElementById("karty").innerHTML = html;
+                klyuch_ruki = noviy_klyuch;
             }
 
-            if (html !== proshlye_karty) {
-                document.getElementById("karty").innerHTML = html;
-                proshlye_karty = html;
+            obnovit_klassy_kart(d);
+        }
+
+        function obnovit_klassy_kart(d) {
+            const kartinki = document.getElementById("karty").children;
+
+            for (let i = 0; i < kartinki.length; i++) {
+                let klass = "karta";
+                if (d.moi_karty[i] === vybrannaya) { klass += " karta-vybrana"; }
+                if (!mozhno_vybirat) { klass += " karta-neaktivna"; }
+                if (kartinki[i].className !== klass) {
+                    kartinki[i].className = klass;
+                }
             }
         }
 
         function narisovat_zamenu(d) {
             let html = "";
 
-            if (d.status === "associaciya" || d.status === "otvety") {
-                if (!d.ya_sdal) {
-                    html += "<span class='moi-ochki'>Твои очки: " + d.moi_ochki + "</span>";
+            if ((d.status === "associaciya" || d.status === "otvety") && !d.ya_sdal) {
+                html += "<span class='moi-ochki'>Очки: " + d.moi_ochki + "</span>";
 
-                    if (d.mogu_zamenit) {
-                        html += "<button class='knopka-zamena' onclick='zamenit()'>" +
-                                "Заменить все карточки за " + d.cena_zameny + " очков</button>";
-                    } else if (d.moi_ochki < d.cena_zameny) {
-                        html += "<span class='moi-ochki'>Замена карточек стоит " +
-                                d.cena_zameny + " очков</span>";
-                    }
+                if (d.mogu_zamenit) {
+                    html += "<button class='knopka-zamena' onclick='zamenit()'>" +
+                            "Заменить карточки за " + d.cena_zameny + "</button>";
+                } else if (d.moi_ochki < d.cena_zameny) {
+                    html += "<span class='moi-ochki'>Замена стоит " + d.cena_zameny + "</span>";
                 }
             }
 
@@ -387,12 +449,10 @@
             const otvet = await fetch("/zamenit_karty", { method: "POST", body: f });
             const rezultat = await otvet.json();
 
-            if (rezultat.oshibka) {
-                alert(rezultat.oshibka);
-            }
+            if (rezultat.oshibka) { alert(rezultat.oshibka); }
 
             vybrannaya = null;
-            proshlye_karty = "";
+            klyuch_ruki = "";
             obnovit();
         }
 
@@ -435,6 +495,7 @@
             document.getElementById("modal").className = "modal modal-vidno";
             modal_otkryt = true;
             narisovat_modal();
+            narisovat_taymer();
         }
 
         function narisovat_modal() {
@@ -456,7 +517,7 @@
             if (rezhim_prosmotra === "vybor" && tekushaya.mozhno) {
                 knopki = "<button class='knopka knopka-glavnaya' onclick='podtverdit_vybor()'>Выбрать эту</button>";
             } else if (rezhim_prosmotra === "golos" && tekushaya.mozhno) {
-                knopki = "<button class='knopka knopka-glavnaya' onclick='podtverdit_golos()'>Голосовать за неё</button>";
+                knopki = "<button class='knopka knopka-glavnaya' onclick='podtverdit_golos()'>Голосовать</button>";
             }
             knopki += "<button class='knopka' onclick='zakryt_modal()'>Закрыть</button>";
             document.getElementById("modal-knopki").innerHTML = knopki;
@@ -476,13 +537,13 @@
         function zakryt_modal() {
             document.getElementById("modal").className = "modal";
             modal_otkryt = false;
+            document.getElementById("modal-taymer").className = "modal-taymer";
         }
 
         function podtverdit_vybor() {
             vybrannaya = spisok_prosmotra[tekushiy_index].fayl;
-            proshlye_karty = "";
             zakryt_modal();
-            obnovit();
+            if (posledniye_dannye) { obnovit_klassy_kart(posledniye_dannye); }
         }
 
         async function podtverdit_golos() {
@@ -514,6 +575,7 @@
             f.append("associaciya", text);
             await fetch("/zagadat", { method: "POST", body: f });
             vybrannaya = null;
+            klyuch_ruki = "";
             obnovit();
         }
 
@@ -524,6 +586,7 @@
             f.append("karta", vybrannaya);
             await fetch("/sdat_kartu", { method: "POST", body: f });
             vybrannaya = null;
+            klyuch_ruki = "";
             obnovit();
         }
 
@@ -563,7 +626,7 @@
 
         kartinka.addEventListener("touchstart", function (e) {
             nachalo_x = e.changedTouches[0].screenX;
-        });
+        }, { passive: true });
 
         kartinka.addEventListener("touchend", function (e) {
             const konec_x = e.changedTouches[0].screenX;
@@ -571,7 +634,7 @@
             if (Math.abs(raznica) > 50) {
                 listat(raznica > 0 ? -1 : 1);
             }
-        });
+        }, { passive: true });
 
         obnovit();
         setInterval(obnovit, 2000);

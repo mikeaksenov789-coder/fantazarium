@@ -453,7 +453,7 @@ def dannye_igry(kod: str, login: str = Cookie(default=None)):
         "ya": login,
         "hozyain": database.poluchit_hozyaina(kod),
         "porog": database.OCHKOV_DLYA_POBEDY,
-        "cena_zameny": database.CENA_ZAMENY,
+        "vsego_sekund": database.SEKUND_NA_HOD,
         "moi_ochki": moi_ochki,
         "ostalos": database.ostalos_sekund(kod),
         "ya_gotov": ya_gotov,
