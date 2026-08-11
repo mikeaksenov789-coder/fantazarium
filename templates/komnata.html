@@ -13,20 +13,14 @@
     <div class="kosmos">
         <div class="planeta ledyanoy"></div>
         <div class="planeta kamenistaya"></div>
-        <div class="planeta zemlepodobnaya"></div>
         <div class="kometa kometa-1"></div>
-        <div class="kometa kometa-2"></div>
-        <div class="sputnik sputnik-2">
-            <div class="panel panel-l"></div>
-            <div class="korpus"></div>
-            <div class="antenna"></div>
-            <div class="panel panel-r"></div>
-        </div>
     </div>
 
     <div class="container">
-        <p class="nadzagolovok">зал ожидания</p>
+        <p class="nadzagolovok" id="tip-komnaty">зал ожидания</p>
         <h2>Комната</h2>
+
+        <div class="plashka-koloda" id="plashka-koloda"></div>
 
         <div class="kod-komnaty" id="kod">.....</div>
         <button class="knopka-kopirovat" onclick="skopirovat()" id="knopka-kopii">Скопировать ссылку</button>
@@ -41,10 +35,7 @@
 
         <div class="knopki" id="mesto-knopki"></div>
 
-        <div class="blok-info">
-            <h4>Пока ждём</h4>
-            <p>Отправь друзьям код или прямую ссылку на эту страницу. Каждый игрок должен нажать кнопку Готов. Когда готовы все и собралось минимум четыре человека, хозяин комнаты запускает партию.</p>
-        </div>
+        <div class="blok-info" id="blok-podskazki"></div>
 
         <a href="/lobbi" class="ssylka-nazad">Выйти</a>
     </div>
@@ -55,6 +46,7 @@
 
         let proshlyy_spisok = "";
         let proshlaya_knopka = "";
+        let proshlaya_info = "";
 
         function skopirovat() {
             navigator.clipboard.writeText(window.location.href);
@@ -77,25 +69,27 @@
                 return;
             }
 
+            document.getElementById("tip-komnaty").textContent =
+                d.publichnaya ? "открытая комната" : "закрытая комната";
+
+            document.getElementById("plashka-koloda").textContent = d.koloda_nazvanie;
+            document.getElementById("plashka-koloda").className =
+                "plashka-koloda plashka-" + d.koloda;
+
             let html = "";
             for (const igrok of d.igroki) {
                 const klass = igrok.gotov ? "igrok igrok-gotov" : "igrok";
 
                 html += "<div class='" + klass + "'>";
-
                 html += "<div class='levaya-igroka'>";
                 html += "<span class='imya-v-spiske'>" + igrok.login + "</span>";
                 if (igrok.login === d.hozyain) {
                     html += "<span class='metka-hozyain'>хозяин</span>";
                 }
                 html += "</div>";
-
-                if (igrok.gotov) {
-                    html += "<div class='plashka-status plashka-gotov'>готов</div>";
-                } else {
-                    html += "<div class='plashka-status plashka-zhdem'>не готов</div>";
-                }
-
+                html += igrok.gotov
+                    ? "<div class='plashka-status plashka-gotov'>готов</div>"
+                    : "<div class='plashka-status plashka-zhdem'>не готов</div>";
                 html += "</div>";
             }
 
@@ -108,7 +102,7 @@
             const podskazka = document.getElementById("podskazka");
 
             if (skolko < 4) {
-                podskazka.textContent = "Нужно минимум 4 игрока. Сейчас: " + skolko;
+                podskazka.textContent = "Нужно минимум 4 игрока. Сейчас: " + skolko + " из " + d.maks;
                 podskazka.className = "podskazka";
             } else if (!d.vse_gotovy) {
                 podskazka.textContent = "Готовы " + d.gotovyh + " из " + skolko;
@@ -119,12 +113,9 @@
             }
 
             let knopka = "";
-
-            if (d.ya_gotov) {
-                knopka += "<button class='knopka knopka-otmena-gotov' onclick='gotovnost()'>Я не готов</button>";
-            } else {
-                knopka += "<button class='knopka knopka-gotov' onclick='gotovnost()'>Готов</button>";
-            }
+            knopka += d.ya_gotov
+                ? "<button class='knopka knopka-otmena-gotov' onclick='gotovnost()'>Я не готов</button>"
+                : "<button class='knopka knopka-gotov' onclick='gotovnost()'>Готов</button>";
 
             if (d.ya === d.hozyain && skolko >= 4 && d.vse_gotovy) {
                 knopka += "<form method='post' action='/nachat_igru'>" +
@@ -135,6 +126,21 @@
             if (knopka !== proshlaya_knopka) {
                 document.getElementById("mesto-knopki").innerHTML = knopka;
                 proshlaya_knopka = knopka;
+            }
+
+            let info = "";
+            if (d.publichnaya) {
+                info = "<h4>Открытая комната</h4>" +
+                       "<p>Сюда может зайти любой игрок, выбравший эту же колоду. " +
+                       "Если ждать надоело, отправь код друзьям, они зайдут по нему.</p>";
+            } else {
+                info = "<h4>Закрытая комната</h4>" +
+                       "<p>Никто посторонний не зайдёт. Отправь друзьям код или ссылку на эту страницу.</p>";
+            }
+
+            if (info !== proshlaya_info) {
+                document.getElementById("blok-podskazki").innerHTML = info;
+                proshlaya_info = info;
             }
         }
 

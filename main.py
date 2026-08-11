@@ -134,11 +134,25 @@ def obrabotat_vhod(login: str = Form(), parol: str = Form()):
 
 
 @app.post("/sozdat_komnatu")
-def sozdat_komnatu(login: str = Cookie(default=None)):
+def sozdat_komnatu(koloda: str = Form(default="omut"), login: str = Cookie(default=None)):
     if login is None:
         return RedirectResponse("/vhod", status_code=303)
 
-    kod = database.sozdat_komnatu(login)
+    kod = database.sozdat_komnatu(login, koloda, publichnaya=False)
+    return RedirectResponse("/komnata/" + kod, status_code=303)
+
+
+@app.post("/bystraya_igra")
+def bystraya_igra(koloda: str = Form(), login: str = Cookie(default=None)):
+    if login is None:
+        return RedirectResponse("/vhod", status_code=303)
+
+    kod = database.nayti_publichnuyu(koloda, login)
+
+    if kod is not None and database.dobavit_v_komnatu(kod, login):
+        return RedirectResponse("/komnata/" + kod, status_code=303)
+
+    kod = database.sozdat_komnatu(login, koloda, publichnaya=True)
     return RedirectResponse("/komnata/" + kod, status_code=303)
 
 
@@ -415,6 +429,8 @@ def dannye_komnaty(kod: str, login: str = Cookie(default=None)):
         if igrok["login"] == login:
             ya_gotov = igrok["gotov"]
 
+    koloda = database.poluchit_kolodu(kod)
+
     return JSONResponse({
         "kod": kod,
         "igroki": igroki,
@@ -423,9 +439,12 @@ def dannye_komnaty(kod: str, login: str = Cookie(default=None)):
         "ya": login,
         "ya_gotov": ya_gotov,
         "gotovyh": database.skolko_gotovyh(kod),
-        "vse_gotovy": database.vse_gotovy(kod)
+        "vse_gotovy": database.vse_gotovy(kod),
+        "koloda": koloda,
+        "koloda_nazvanie": database.KOLODY[koloda]["nazvanie"],
+        "publichnaya": database.komnata_publichnaya(kod),
+        "maks": database.MAKS_IGROKOV
     })
-
 
 @app.get("/api/igra/{kod}")
 def dannye_igry(kod: str, login: str = Cookie(default=None)):
@@ -533,3 +552,16 @@ def dannye_igry(kod: str, login: str = Cookie(default=None)):
         otvet["itogi"] = []
 
     return JSONResponse(otvet)
+
+@app.get("/api/kolody")
+def dannye_kolod():
+    spisok = []
+    for kod_kolody, info in database.KOLODY.items():
+        spisok.append({
+            "kod": kod_kolody,
+            "nazvanie": info["nazvanie"],
+            "opisanie": info["opisanie"],
+            "kart": database.skolko_kart_v_kolode(kod_kolody),
+            "igraet": database.skolko_igraet_publichno(kod_kolody)
+        })
+    return JSONResponse({"kolody": spisok})

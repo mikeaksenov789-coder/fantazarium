@@ -13,48 +13,68 @@
     <div class="kosmos">
         <div class="planeta gazoviy"></div>
         <div class="planeta ledyanoy"></div>
-        <div class="planeta lunnaya"></div>
         <div class="kometa kometa-1"></div>
-        <div class="kometa kometa-3"></div>
-        <div class="sputnik sputnik-1">
-            <div class="panel panel-l"></div>
-            <div class="korpus"></div>
-            <div class="antenna"></div>
-            <div class="panel panel-r"></div>
-        </div>
     </div>
 
     <div class="container">
-        <p class="nadzagolovok">выбери путь</p>
-        <h2>Игровое лобби</h2>
+        <p class="nadzagolovok">выбери колоду</p>
+        <h2>Быстрая игра</h2>
 
         <div class="soobshenie" id="soobshenie"></div>
 
-        <form method="post" action="/sozdat_komnatu">
-            <button type="submit" class="knopka knopka-glavnaya">Создать комнату</button>
-        </form>
+        <div class="kolody" id="kolody">
+            <p class="podzagolovok">Загрузка...</p>
+        </div>
 
-        <p class="podzagolovok" style="margin: 24px 0 16px;">или</p>
+        <div class="razdelitel"><span>или играй с друзьями</span></div>
 
-        <form class="forma" method="post" action="/voyti_v_komnatu">
-            <input type="text" name="kod" placeholder="Код комнаты" class="pole" required maxlength="5">
-            <button type="submit" class="knopka">Войти по коду</button>
-        </form>
+        <div class="blok-druzya">
+            <form class="forma" method="post" action="/sozdat_komnatu">
+                <select name="koloda" class="pole vybor-kolody">
+                    <option value="omut">Тихий омут</option>
+                    <option value="balagan">Шумный балаган</option>
+                </select>
+                <button type="submit" class="knopka">Создать закрытую комнату</button>
+            </form>
 
-        <div class="blok-info">
-            <h4>Если создаёшь комнату</h4>
-            <p>Ты станешь хозяином. Получишь код из пяти символов, отправь его друзьям. Когда все нажмут Готов и соберётся минимум четыре человека, появится кнопка старта.</p>
+            <form class="forma" method="post" action="/voyti_v_komnatu" style="margin-top: 16px;">
+                <input type="text" name="kod" placeholder="Код комнаты" class="pole" required maxlength="5">
+                <button type="submit" class="knopka">Войти по коду</button>
+            </form>
         </div>
 
         <div class="blok-info">
-            <h4>Если входишь по коду</h4>
-            <p>Введи код, который тебе прислали. Регистр не важен, буквы можно писать маленькими. В коде нет символов O, I, 0 и 1, чтобы их нельзя было перепутать.</p>
+            <h4>Чем отличаются режимы</h4>
+            <p>Быстрая игра ищет открытую комнату с выбранной колодой. Если свободных нет, создаётся новая, и к тебе может присоединиться кто угодно.</p>
+            <p style="margin-top: 10px;">Закрытая комната видна только по коду. Никто посторонний не зайдёт.</p>
         </div>
 
         <a href="/" class="ssylka-nazad">На главную</a>
     </div>
 
     <script>
+        async function zagruzit_kolody() {
+            const otvet = await fetch("/api/kolody");
+            const d = await otvet.json();
+
+            let html = "";
+            for (const k of d.kolody) {
+                const podpis = k.igraet > 0
+                    ? "<span class='ishchut'>сейчас ищут игру: " + k.igraet + "</span>"
+                    : "<span class='nikogo'>сейчас никого нет</span>";
+
+                html += "<form method='post' action='/bystraya_igra' class='karta-kolody'>";
+                html += "<input type='hidden' name='koloda' value='" + k.kod + "'>";
+                html += "<button type='submit' class='knopka-koloda koloda-" + k.kod + "'>";
+                html += "<span class='koloda-imya'>" + k.nazvanie + "</span>";
+                html += "<span class='koloda-opis'>" + k.opisanie + "</span>";
+                html += "<span class='koloda-niz'>" + k.kart + " карт &nbsp;·&nbsp; " + podpis + "</span>";
+                html += "</button></form>";
+            }
+
+            document.getElementById("kolody").innerHTML = html;
+        }
+
         const parametry = new URLSearchParams(window.location.search);
         const oshibka = parametry.get("oshibka");
         const blok = document.getElementById("soobshenie");
@@ -63,9 +83,12 @@
             blok.textContent = "Комната с таким кодом не найдена. Проверь код.";
             blok.className = "soobshenie soobshenie-vidno";
         } else if (oshibka === "idet") {
-            blok.textContent = "В этой комнате игра уже началась.";
+            blok.textContent = "В этой комнате игра уже началась или нет мест.";
             blok.className = "soobshenie soobshenie-vidno";
         }
+
+        zagruzit_kolody();
+        setInterval(zagruzit_kolody, 5000);
     </script>
 
 </body>
