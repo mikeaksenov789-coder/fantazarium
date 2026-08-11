@@ -685,3 +685,94 @@ async def perevesti_frazy(zapros: dict):
             itog[fraza] = noviy
 
     return JSONResponse({"perevody": itog})
+
+@app.get("/glavnaya")
+def stranica_glavnaya():
+    return FileResponse("templates/glavnaya.html")
+
+
+@app.get("/profil")
+def stranica_profilya():
+    return FileResponse("templates/profil.html")
+
+
+@app.get("/vyhod")
+def vyhod_iz_akkaunta():
+    otvet = RedirectResponse("/", status_code=303)
+    otvet.delete_cookie("login")
+    return otvet
+
+
+@app.get("/api/profil")
+def dannye_profilya(login: str = Cookie(default=None)):
+    if login is None:
+        return JSONResponse({"oshibka": "Не авторизован"})
+
+    profil = database.poluchit_profil(login)
+
+    procent = 0
+    if profil["igr"] > 0:
+        procent = round(profil["pobed"] / profil["igr"] * 100)
+
+    return JSONResponse({
+        "login": login,
+        "yazyk": profil["yazyk"],
+        "avatar": profil["avatar"],
+        "igr": profil["igr"],
+        "pobed": profil["pobed"],
+        "porazheniy": profil["igr"] - profil["pobed"],
+        "procent": procent,
+        "ochkov_vsego": profil["ochkov_vsego"]
+    })
+
+
+@app.post("/smenit_yazyk")
+def smenit_yazyk(yazyk: str = Form(), login: str = Cookie(default=None)):
+    if login is None:
+        return JSONResponse({"oshibka": "Не авторизован"})
+
+    if yazyk not in database.YAZYKI:
+        return JSONResponse({"oshibka": "Неизвестный язык"})
+
+    database.ustanovit_yazyk(login, yazyk)
+
+    otvet = JSONResponse({"ok": True})
+    otvet.set_cookie(key="yazyk", value=yazyk)
+    return otvet
+
+
+@app.post("/zagruzit_avatar")
+async def zagruzit_avatar(fayl: UploadFile = File(), login: str = Cookie(default=None)):
+    if login is None:
+        return RedirectResponse("/vhod", status_code=303)
+
+    dannye = await fayl.read()
+
+    if len(dannye) > 6 * 1024 * 1024:
+        return RedirectResponse("/profil?oshibka=bolshoy", status_code=303)
+
+    try:
+        kartinka = Image.open(io.BytesIO(dannye))
+        kartinka = kartinka.convert("RGB")
+
+        shirina, vysota = kartinka.size
+        storona = min(shirina, vysota)
+        levo = (shirina - storona) // 2
+        verh = (vysota - storona) // 2
+        kartinka = kartinka.crop((levo, verh, levo + storona, verh + storona))
+        kartinka = kartinka.resize((256, 256))
+
+        bezopasnoe_imya = "".join(c for c in login if c.isalnum() or c in "_-")
+        if bezopasnoe_imya == "":
+            bezopasnoe_imya = "user"
+
+        imya_fayla = bezopasnoe_imya + ".jpg"
+        put = os.path.join("static", "avatars", imya_fayla)
+        kartinka.save(put, "JPEG", quality=85)
+
+        database.ustanovit_avatar(login, imya_fayla)
+
+    except Exception:
+        return RedirectResponse("/profil?oshibka=format", status_code=303)
+
+    return RedirectResponse("/profil?ok=1", status_code=303)
