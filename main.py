@@ -1,11 +1,12 @@
-from fastapi import FastAPI, Form, Cookie, UploadFile, File
+from fastapi import FastAPI, Form, Cookie, UploadFile, File, Request
 from fastapi.responses import FileResponse, RedirectResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from PIL import Image
 import io
 import os
-import urllib.request
+import re
 import json
+import urllib.request
 
 import database
 
@@ -19,7 +20,55 @@ database.sozdat_tablicu_kart()
 database.sozdat_tablicu_raundov()
 database.sozdat_tablicu_profilya()
 database.sozdat_tablicu_perevodov()
+database.sozdat_tablicu_sessiy()
+
 os.makedirs(os.path.join("static", "avatars"), exist_ok=True)
+
+RAZRESHENNYY_LOGIN = re.compile(r"^[A-Za-zА-Яа-яЁё0-9_\- ]{2,20}$")
+RAZRESHENNYY_KOD = re.compile(r"^[A-Z0-9]{5}$")
+
+ADRES_PEREVODCHIKA = "http://127.0.0.1:5000/translate"
+
+
+def kto_eto(token):
+    """Единственная точка определения игрока."""
+    return database.login_po_tokenu(token)
+
+
+def ne_slishkom_chasto(zapros, deystvie, limit=20, okno=60):
+    ip = zapros.client.host if zapros.client else "net"
+    return database.proverit_popytki(deystvie + ":" + ip, limit, okno)
+
+
+def postavit_sessiyu(otvet, login, yazyk):
+    token = database.sozdat_sessiyu(login)
+    otvet.set_cookie(
+        key="sessiya",
+        value=token,
+        httponly=True,
+        samesite="lax",
+        max_age=database.SROK_SESSII,
+        path="/"
+    )
+    otvet.set_cookie(
+        key="yazyk",
+        value=yazyk if yazyk in database.YAZYKI else "ru",
+        samesite="lax",
+        max_age=database.SROK_SESSII,
+        path="/"
+    )
+    otvet.delete_cookie("login")
+    return otvet
+
+
+@app.middleware("http")
+async def zagolovki_bezopasnosti(zapros, sleduyushiy):
+    otvet = await sleduyushiy(zapros)
+    otvet.headers["X-Content-Type-Options"] = "nosniff"
+    otvet.headers["X-Frame-Options"] = "SAMEORIGIN"
+    otvet.headers["Referrer-Policy"] = "same-origin"
+    otvet.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
+    return otvet
 
 
 def zakonchit_raund(kod):
@@ -45,7 +94,6 @@ def zapustit_sleduyushiy_raund(kod):
 
 
 def zakonchit_sdachu(kod):
-    """Переход от сдачи карт к голосованию или сразу к итогам."""
     raund = database.tekushiy_raund(kod)
     hody = database.poluchit_hody(kod, raund["nomer"])
 
@@ -105,6 +153,16 @@ def stranica_lobbi():
     return FileResponse("templates/lobbi.html")
 
 
+@app.get("/glavnaya")
+def stranica_glavnaya():
+    return FileResponse("templates/glavnaya.html")
+
+
+@app.get("/profil")
+def stranica_profilya():
+    return FileResponse("templates/profil.html")
+
+
 @app.get("/komnata/{kod}")
 def stranica_komnaty(kod: str):
     return FileResponse("templates/komnata.html")
@@ -117,14 +175,23 @@ def stranica_igry(kod: str):
 
 @app.post("/registraciya")
 def obrabotat_registraciyu(
+    zapros: Request,
     login: str = Form(),
     parol: str = Form(),
     yazyk: str = Form(default="ru")
 ):
+    ip = zapros.client.host if zapros.client else "net"
+
+    if not database.proverit_popytki("reg:" + ip, 5, 3600):
+        return RedirectResponse("/registraciya?oshibka=chasto", status_code=303)
+
     login = login.strip()
 
-    if len(login) == 0 or len(login) > 20:
-        return RedirectResponse("/registraciya?oshibka=zanyat", status_code=303)
+    if not RAZRESHENNYY_LOGIN.match(login):
+        return RedirectResponse("/registraciya?oshibka=login", status_code=303)
+
+    if len(parol) < 6 or len(parol) > 128:
+        return RedirectResponse("/registraciya?oshibka=parol", status_code=303)
 
     if not database.dobavit_igroka(login, parol):
         return RedirectResponse("/registraciya?oshibka=zanyat", status_code=303)
@@ -132,43 +199,74 @@ def obrabotat_registraciyu(
     database.sozdat_profil(login, yazyk)
 
     otvet = RedirectResponse("/glavnaya", status_code=303)
-    otvet.set_cookie(key="login", value=login)
-    otvet.set_cookie(key="yazyk", value=yazyk if yazyk in database.YAZYKI else "ru")
-    return otvet
+    return postavit_sessiyu(otvet, login, yazyk)
 
 
 @app.post("/vhod")
 def obrabotat_vhod(
+    zapros: Request,
     login: str = Form(),
     parol: str = Form(),
     yazyk: str = Form(default="ru")
 ):
+    ip = zapros.client.host if zapros.client else "net"
     login = login.strip()
+
+    if not database.proverit_popytki("vhod:" + ip, 10, 900):
+        return RedirectResponse("/vhod?oshibka=chasto", status_code=303)
+
+    if not database.proverit_popytki("vhod_login:" + login, 8, 900):
+        return RedirectResponse("/vhod?oshibka=chasto", status_code=303)
 
     if not database.proverit_parol(login, parol):
         return RedirectResponse("/vhod?oshibka=1", status_code=303)
 
+    database.sbrosit_popytki("vhod:" + ip)
+    database.sbrosit_popytki("vhod_login:" + login)
     database.ustanovit_yazyk(login, yazyk)
 
     otvet = RedirectResponse("/glavnaya", status_code=303)
-    otvet.set_cookie(key="login", value=login)
-    otvet.set_cookie(key="yazyk", value=yazyk if yazyk in database.YAZYKI else "ru")
+    return postavit_sessiyu(otvet, login, yazyk)
+
+
+@app.get("/vyhod")
+def vyhod_iz_akkaunta(sessiya: str = Cookie(default=None)):
+    database.udalit_sessiyu(sessiya)
+    otvet = RedirectResponse("/", status_code=303)
+    otvet.delete_cookie("sessiya", path="/")
+    otvet.delete_cookie("login", path="/")
     return otvet
 
 
 @app.post("/sozdat_komnatu")
-def sozdat_komnatu(koloda: str = Form(default="omut"), login: str = Cookie(default=None)):
+def sozdat_komnatu(
+    zapros: Request,
+    koloda: str = Form(default="omut"),
+    sessiya: str = Cookie(default=None)
+):
+    login = kto_eto(sessiya)
     if login is None:
         return RedirectResponse("/vhod", status_code=303)
+
+    if not ne_slishkom_chasto(zapros, "komnata", 15, 300):
+        return RedirectResponse("/lobbi?oshibka=chasto", status_code=303)
 
     kod = database.sozdat_komnatu(login, koloda, publichnaya=False)
     return RedirectResponse("/komnata/" + kod, status_code=303)
 
 
 @app.post("/bystraya_igra")
-def bystraya_igra(koloda: str = Form(), login: str = Cookie(default=None)):
+def bystraya_igra(
+    zapros: Request,
+    koloda: str = Form(),
+    sessiya: str = Cookie(default=None)
+):
+    login = kto_eto(sessiya)
     if login is None:
         return RedirectResponse("/vhod", status_code=303)
+
+    if not ne_slishkom_chasto(zapros, "komnata", 15, 300):
+        return RedirectResponse("/lobbi?oshibka=chasto", status_code=303)
 
     kod = database.nayti_publichnuyu(koloda, login)
 
@@ -180,11 +278,22 @@ def bystraya_igra(koloda: str = Form(), login: str = Cookie(default=None)):
 
 
 @app.post("/voyti_v_komnatu")
-def voyti_v_komnatu(kod: str = Form(), login: str = Cookie(default=None)):
+def voyti_v_komnatu(
+    zapros: Request,
+    kod: str = Form(),
+    sessiya: str = Cookie(default=None)
+):
+    login = kto_eto(sessiya)
     if login is None:
         return RedirectResponse("/vhod", status_code=303)
 
+    if not ne_slishkom_chasto(zapros, "vhod_komnata", 30, 300):
+        return RedirectResponse("/lobbi?oshibka=chasto", status_code=303)
+
     kod = kod.strip().upper()
+
+    if not RAZRESHENNYY_KOD.match(kod):
+        return RedirectResponse("/lobbi?oshibka=net", status_code=303)
 
     if not database.komnata_sushestvuet(kod):
         return RedirectResponse("/lobbi?oshibka=net", status_code=303)
@@ -196,9 +305,13 @@ def voyti_v_komnatu(kod: str = Form(), login: str = Cookie(default=None)):
 
 
 @app.post("/gotovnost")
-def gotovnost(kod: str = Form(), login: str = Cookie(default=None)):
+def gotovnost(kod: str = Form(), sessiya: str = Cookie(default=None)):
+    login = kto_eto(sessiya)
     if login is None:
         return JSONResponse({"oshibka": "Не авторизован"})
+
+    if not database.igrok_v_komnate(kod, login):
+        return JSONResponse({"oshibka": "Тебя нет в этой комнате"})
 
     status = database.poluchit_status(kod)
 
@@ -214,7 +327,8 @@ def gotovnost(kod: str = Form(), login: str = Cookie(default=None)):
 
 
 @app.post("/nachat_igru")
-def nachat_igru(kod: str = Form(), login: str = Cookie(default=None)):
+def nachat_igru(kod: str = Form(), sessiya: str = Cookie(default=None)):
+    login = kto_eto(sessiya)
     if login is None:
         return RedirectResponse("/vhod", status_code=303)
 
@@ -227,6 +341,9 @@ def nachat_igru(kod: str = Form(), login: str = Cookie(default=None)):
     if not database.vse_gotovy(kod):
         return RedirectResponse("/komnata/" + kod, status_code=303)
 
+    if database.poluchit_status(kod) != "ozhidanie":
+        return RedirectResponse("/igra/" + kod, status_code=303)
+
     database.razdat_karty(kod)
     database.nachat_raund(kod, 1)
     database.sbrosit_gotovnost(kod)
@@ -237,9 +354,13 @@ def nachat_igru(kod: str = Form(), login: str = Cookie(default=None)):
 
 
 @app.post("/zamenit_karty")
-def zamenit_karty(kod: str = Form(), login: str = Cookie(default=None)):
+def zamenit_karty(kod: str = Form(), sessiya: str = Cookie(default=None)):
+    login = kto_eto(sessiya)
     if login is None:
         return JSONResponse({"oshibka": "Не авторизован"})
+
+    if not database.igrok_v_komnate(kod, login):
+        return JSONResponse({"oshibka": "Тебя нет в этой комнате"})
 
     status = database.poluchit_status(kod)
 
@@ -269,8 +390,12 @@ def zagadat(
     kod: str = Form(),
     karta: str = Form(),
     associaciya: str = Form(),
-    login: str = Cookie(default=None)
+    sessiya: str = Cookie(default=None)
 ):
+    login = kto_eto(sessiya)
+    if login is None:
+        return JSONResponse({"oshibka": "Не авторизован"})
+
     raund = database.tekushiy_raund(kod)
 
     if raund is None or raund["vedushiy"] != login:
@@ -278,6 +403,9 @@ def zagadat(
 
     if database.poluchit_status(kod) != "associaciya":
         return JSONResponse({"oshibka": "Сейчас не время загадывать"})
+
+    if karta not in database.poluchit_ruku(kod, login):
+        return JSONResponse({"oshibka": "У тебя нет такой карты"})
 
     associaciya = associaciya.strip()
     if len(associaciya) == 0 or len(associaciya) > 80:
@@ -293,7 +421,18 @@ def zagadat(
 
 
 @app.post("/sdat_kartu")
-def sdat_kartu(kod: str = Form(), karta: str = Form(), login: str = Cookie(default=None)):
+def sdat_kartu(
+    kod: str = Form(),
+    karta: str = Form(),
+    sessiya: str = Cookie(default=None)
+):
+    login = kto_eto(sessiya)
+    if login is None:
+        return JSONResponse({"oshibka": "Не авторизован"})
+
+    if not database.igrok_v_komnate(kod, login):
+        return JSONResponse({"oshibka": "Тебя нет в этой комнате"})
+
     proverit_vremya(kod)
 
     raund = database.tekushiy_raund(kod)
@@ -303,6 +442,9 @@ def sdat_kartu(kod: str = Form(), karta: str = Form(), login: str = Cookie(defau
 
     if database.poluchit_status(kod) != "otvety":
         return JSONResponse({"oshibka": "Время вышло"})
+
+    if karta not in database.poluchit_ruku(kod, login):
+        return JSONResponse({"oshibka": "У тебя нет такой карты"})
 
     database.sohranit_hod(kod, raund["nomer"], login, karta)
     database.ubrat_kartu_iz_ruki(kod, login, karta)
@@ -317,7 +459,18 @@ def sdat_kartu(kod: str = Form(), karta: str = Form(), login: str = Cookie(defau
 
 
 @app.post("/golosovat")
-def golosovat(kod: str = Form(), karta: str = Form(), login: str = Cookie(default=None)):
+def golosovat(
+    kod: str = Form(),
+    karta: str = Form(),
+    sessiya: str = Cookie(default=None)
+):
+    login = kto_eto(sessiya)
+    if login is None:
+        return JSONResponse({"oshibka": "Не авторизован"})
+
+    if not database.igrok_v_komnate(kod, login):
+        return JSONResponse({"oshibka": "Тебя нет в этой комнате"})
+
     proverit_vremya(kod)
 
     raund = database.tekushiy_raund(kod)
@@ -334,6 +487,10 @@ def golosovat(kod: str = Form(), karta: str = Form(), login: str = Cookie(defaul
         return JSONResponse({"oshibka": "Ты не сдал карту в этом раунде"})
 
     hody = database.poluchit_hody(kod, raund["nomer"])
+
+    if karta not in [h["karta"] for h in hody]:
+        return JSONResponse({"oshibka": "Такой карты нет на столе"})
+
     for hod in hody:
         if hod["karta"] == karta and hod["login"] == login:
             return JSONResponse({"oshibka": "Нельзя голосовать за свою карту"})
@@ -349,7 +506,11 @@ def golosovat(kod: str = Form(), karta: str = Form(), login: str = Cookie(defaul
 
 
 @app.post("/igrat_snova")
-def igrat_snova(kod: str = Form(), login: str = Cookie(default=None)):
+def igrat_snova(kod: str = Form(), sessiya: str = Cookie(default=None)):
+    login = kto_eto(sessiya)
+    if login is None:
+        return JSONResponse({"oshibka": "Не авторизован"})
+
     if login != database.poluchit_hozyaina(kod):
         return JSONResponse({"oshibka": "Только хозяин может начать заново"})
 
@@ -361,9 +522,13 @@ def igrat_snova(kod: str = Form(), login: str = Cookie(default=None)):
 
 
 @app.post("/vyyti_iz_igry")
-def vyyti_iz_igry(kod: str = Form(), login: str = Cookie(default=None)):
+def vyyti_iz_igry(kod: str = Form(), sessiya: str = Cookie(default=None)):
+    login = kto_eto(sessiya)
     if login is None:
         return JSONResponse({"oshibka": "Не авторизован"})
+
+    if not database.igrok_v_komnate(kod, login):
+        return JSONResponse({"ok": True})
 
     database.vygnat_igroka(kod, login)
 
@@ -398,12 +563,23 @@ def vyyti_iz_igry(kod: str = Form(), login: str = Cookie(default=None)):
 
 
 @app.post("/propustit_igroka")
-def propustit_igroka(kod: str = Form(), kogo: str = Form(), login: str = Cookie(default=None)):
+def propustit_igroka(
+    kod: str = Form(),
+    kogo: str = Form(),
+    sessiya: str = Cookie(default=None)
+):
+    login = kto_eto(sessiya)
+    if login is None:
+        return JSONResponse({"oshibka": "Не авторизован"})
+
     if login != database.poluchit_hozyaina(kod):
         return JSONResponse({"oshibka": "Только хозяин может исключать"})
 
     if kogo == login:
         return JSONResponse({"oshibka": "Нельзя исключить себя"})
+
+    if not database.igrok_v_komnate(kod, kogo):
+        return JSONResponse({"oshibka": "Такого игрока нет"})
 
     database.vygnat_igroka(kod, kogo)
 
@@ -442,8 +618,122 @@ def propustit_igroka(kod: str = Form(), kogo: str = Form(), login: str = Cookie(
     return JSONResponse({"ok": True})
 
 
+@app.post("/smenit_yazyk")
+def smenit_yazyk(yazyk: str = Form(), sessiya: str = Cookie(default=None)):
+    login = kto_eto(sessiya)
+    if login is None:
+        return JSONResponse({"oshibka": "Не авторизован"})
+
+    if yazyk not in database.YAZYKI:
+        return JSONResponse({"oshibka": "Неизвестный язык"})
+
+    database.ustanovit_yazyk(login, yazyk)
+
+    otvet = JSONResponse({"ok": True})
+    otvet.set_cookie(
+        key="yazyk",
+        value=yazyk,
+        samesite="lax",
+        max_age=database.SROK_SESSII,
+        path="/"
+    )
+    return otvet
+
+
+@app.post("/zagruzit_avatar")
+async def zagruzit_avatar(
+    zapros: Request,
+    fayl: UploadFile = File(),
+    sessiya: str = Cookie(default=None)
+):
+    login = kto_eto(sessiya)
+    if login is None:
+        return RedirectResponse("/vhod", status_code=303)
+
+    if not ne_slishkom_chasto(zapros, "avatar", 10, 600):
+        return RedirectResponse("/profil?oshibka=chasto", status_code=303)
+
+    dannye = await fayl.read()
+
+    if len(dannye) > 6 * 1024 * 1024:
+        return RedirectResponse("/profil?oshibka=bolshoy", status_code=303)
+
+    try:
+        kartinka = Image.open(io.BytesIO(dannye))
+        kartinka.verify()
+
+        kartinka = Image.open(io.BytesIO(dannye))
+        kartinka = kartinka.convert("RGB")
+
+        shirina, vysota = kartinka.size
+
+        if shirina > 8000 or vysota > 8000:
+            return RedirectResponse("/profil?oshibka=format", status_code=303)
+
+        storona = min(shirina, vysota)
+        levo = (shirina - storona) // 2
+        verh = (vysota - storona) // 2
+        kartinka = kartinka.crop((levo, verh, levo + storona, verh + storona))
+        kartinka = kartinka.resize((256, 256))
+
+        bezopasnoe_imya = "".join(c for c in login if c.isalnum())
+        if bezopasnoe_imya == "":
+            bezopasnoe_imya = "user" + str(abs(hash(login)) % 100000)
+
+        imya_fayla = bezopasnoe_imya + ".jpg"
+        put = os.path.join("static", "avatars", imya_fayla)
+        kartinka.save(put, "JPEG", quality=85)
+
+        database.ustanovit_avatar(login, imya_fayla)
+
+    except Exception:
+        return RedirectResponse("/profil?oshibka=format", status_code=303)
+
+    return RedirectResponse("/profil?ok=1", status_code=303)
+
+
+@app.get("/api/profil")
+def dannye_profilya(sessiya: str = Cookie(default=None)):
+    login = kto_eto(sessiya)
+    if login is None:
+        return JSONResponse({"oshibka": "Не авторизован"})
+
+    profil = database.poluchit_profil(login)
+
+    procent = 0
+    if profil["igr"] > 0:
+        procent = round(profil["pobed"] / profil["igr"] * 100)
+
+    return JSONResponse({
+        "login": login,
+        "yazyk": profil["yazyk"],
+        "avatar": profil["avatar"],
+        "igr": profil["igr"],
+        "pobed": profil["pobed"],
+        "porazheniy": profil["igr"] - profil["pobed"],
+        "procent": procent,
+        "ochkov_vsego": profil["ochkov_vsego"]
+    })
+
+
+@app.get("/api/kolody")
+def dannye_kolod():
+    spisok = []
+    for kod_kolody, info in database.KOLODY.items():
+        spisok.append({
+            "kod": kod_kolody,
+            "nazvanie": info["nazvanie"],
+            "opisanie": info["opisanie"],
+            "kart": database.skolko_kart_v_kolode(kod_kolody),
+            "igraet": database.skolko_igraet_publichno(kod_kolody)
+        })
+    return JSONResponse({"kolody": spisok})
+
+
 @app.get("/api/komnata/{kod}")
-def dannye_komnaty(kod: str, login: str = Cookie(default=None)):
+def dannye_komnaty(kod: str, sessiya: str = Cookie(default=None)):
+    login = kto_eto(sessiya)
+
     if not database.komnata_sushestvuet(kod):
         return JSONResponse({"oshibka": "Комната не найдена"})
 
@@ -470,8 +760,14 @@ def dannye_komnaty(kod: str, login: str = Cookie(default=None)):
         "maks": database.MAKS_IGROKOV
     })
 
+
 @app.get("/api/igra/{kod}")
-def dannye_igry(kod: str, login: str = Cookie(default=None)):
+def dannye_igry(kod: str, sessiya: str = Cookie(default=None)):
+    login = kto_eto(sessiya)
+
+    if login is None:
+        return JSONResponse({"oshibka": "Не авторизован"})
+
     if not database.komnata_sushestvuet(kod):
         return JSONResponse({"oshibka": "Комната не найдена"})
 
@@ -617,17 +913,8 @@ def dannye_igry(kod: str, login: str = Cookie(default=None)):
 
     return JSONResponse(otvet)
 
-ADRES_PEREVODCHIKA = "http://127.0.0.1:5000/translate"
-PEREVODCHIK_RABOTAET = True
-
 
 def sprosit_perevodchik(fraza, yazyk):
-    """Переводит одну фразу через LibreTranslate. None, если не вышло."""
-    global PEREVODCHIK_RABOTAET
-
-    if not PEREVODCHIK_RABOTAET:
-        return None
-
     try:
         dannye = json.dumps({
             "q": fraza,
@@ -651,10 +938,20 @@ def sprosit_perevodchik(fraza, yazyk):
 
 
 @app.post("/api/perevesti")
-async def perevesti_frazy(zapros: dict):
-    """Принимает список фраз, возвращает переводы."""
-    frazy = zapros.get("frazy", [])
-    yazyk = zapros.get("yazyk", "ru")
+async def perevesti_frazy(zapros: Request, sessiya: str = Cookie(default=None)):
+    if kto_eto(sessiya) is None:
+        return JSONResponse({"perevody": {}})
+
+    if not ne_slishkom_chasto(zapros, "perevod", 60, 60):
+        return JSONResponse({"perevody": {}})
+
+    try:
+        telo = await zapros.json()
+    except Exception:
+        return JSONResponse({"perevody": {}})
+
+    frazy = telo.get("frazy", [])
+    yazyk = telo.get("yazyk", "ru")
 
     if yazyk not in database.YAZYKI or yazyk == "ru":
         return JSONResponse({"perevody": {}})
@@ -685,107 +982,3 @@ async def perevesti_frazy(zapros: dict):
             itog[fraza] = noviy
 
     return JSONResponse({"perevody": itog})
-
-@app.get("/glavnaya")
-def stranica_glavnaya():
-    return FileResponse("templates/glavnaya.html")
-
-
-@app.get("/profil")
-def stranica_profilya():
-    return FileResponse("templates/profil.html")
-
-
-@app.get("/vyhod")
-def vyhod_iz_akkaunta():
-    otvet = RedirectResponse("/", status_code=303)
-    otvet.delete_cookie("login")
-    return otvet
-
-
-@app.get("/api/profil")
-def dannye_profilya(login: str = Cookie(default=None)):
-    if login is None:
-        return JSONResponse({"oshibka": "Не авторизован"})
-
-    profil = database.poluchit_profil(login)
-
-    procent = 0
-    if profil["igr"] > 0:
-        procent = round(profil["pobed"] / profil["igr"] * 100)
-
-    return JSONResponse({
-        "login": login,
-        "yazyk": profil["yazyk"],
-        "avatar": profil["avatar"],
-        "igr": profil["igr"],
-        "pobed": profil["pobed"],
-        "porazheniy": profil["igr"] - profil["pobed"],
-        "procent": procent,
-        "ochkov_vsego": profil["ochkov_vsego"]
-    })
-
-
-@app.post("/smenit_yazyk")
-def smenit_yazyk(yazyk: str = Form(), login: str = Cookie(default=None)):
-    if login is None:
-        return JSONResponse({"oshibka": "Не авторизован"})
-
-    if yazyk not in database.YAZYKI:
-        return JSONResponse({"oshibka": "Неизвестный язык"})
-
-    database.ustanovit_yazyk(login, yazyk)
-
-    otvet = JSONResponse({"ok": True})
-    otvet.set_cookie(key="yazyk", value=yazyk)
-    return otvet
-
-
-@app.post("/zagruzit_avatar")
-async def zagruzit_avatar(fayl: UploadFile = File(), login: str = Cookie(default=None)):
-    if login is None:
-        return RedirectResponse("/vhod", status_code=303)
-
-    dannye = await fayl.read()
-
-    if len(dannye) > 6 * 1024 * 1024:
-        return RedirectResponse("/profil?oshibka=bolshoy", status_code=303)
-
-    try:
-        kartinka = Image.open(io.BytesIO(dannye))
-        kartinka = kartinka.convert("RGB")
-
-        shirina, vysota = kartinka.size
-        storona = min(shirina, vysota)
-        levo = (shirina - storona) // 2
-        verh = (vysota - storona) // 2
-        kartinka = kartinka.crop((levo, verh, levo + storona, verh + storona))
-        kartinka = kartinka.resize((256, 256))
-
-        bezopasnoe_imya = "".join(c for c in login if c.isalnum() or c in "_-")
-        if bezopasnoe_imya == "":
-            bezopasnoe_imya = "user"
-
-        imya_fayla = bezopasnoe_imya + ".jpg"
-        put = os.path.join("static", "avatars", imya_fayla)
-        kartinka.save(put, "JPEG", quality=85)
-
-        database.ustanovit_avatar(login, imya_fayla)
-
-    except Exception:
-        return RedirectResponse("/profil?oshibka=format", status_code=303)
-
-    return RedirectResponse("/profil?ok=1", status_code=303)
-
-@app.get("/api/kolody")
-def dannye_kolod():
-    spisok = []
-    for kod_kolody, info in database.KOLODY.items():
-        spisok.append({
-            "kod": kod_kolody,
-            "nazvanie": info["nazvanie"],
-            "opisanie": info["opisanie"],
-            "kart": database.skolko_kart_v_kolode(kod_kolody),
-            "igraet": database.skolko_igraet_publichno(kod_kolody)
-        })
-    return JSONResponse({"kolody": spisok})

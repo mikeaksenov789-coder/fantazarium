@@ -4,7 +4,6 @@ import secrets
 import random
 import os
 import time
-import shutil
 
 
 BAZA = "fantazarium.db"
@@ -15,6 +14,11 @@ OCHKOV_DLYA_POBEDY = 30
 SEKUND_NA_HOD = 120
 CENA_ZAMENY = 5
 MAKS_IGROKOV = 7
+
+ITERACIY = 200000
+SROK_SESSII = 60 * 60 * 24 * 30
+
+YAZYKI = ["ru", "en", "es", "de", "fr", "zh"]
 
 KOLODY = {
     "omut": {
@@ -130,11 +134,78 @@ def sozdat_tablicu_raundov():
     soedinenie.close()
 
 
+def sozdat_tablicu_profilya():
+    soedinenie = sqlite3.connect(BAZA)
+    kursor = soedinenie.cursor()
+    kursor.execute("""
+        CREATE TABLE IF NOT EXISTS profili (
+            login TEXT PRIMARY KEY,
+            yazyk TEXT NOT NULL DEFAULT 'ru',
+            avatar TEXT,
+            igr INTEGER NOT NULL DEFAULT 0,
+            pobed INTEGER NOT NULL DEFAULT 0,
+            ochkov_vsego INTEGER NOT NULL DEFAULT 0
+        )
+    """)
+    kursor.execute("""
+        CREATE TABLE IF NOT EXISTS zapisannye (
+            kod TEXT PRIMARY KEY
+        )
+    """)
+    soedinenie.commit()
+    soedinenie.close()
+
+
+def sozdat_tablicu_perevodov():
+    soedinenie = sqlite3.connect(BAZA)
+    kursor = soedinenie.cursor()
+    kursor.execute("""
+        CREATE TABLE IF NOT EXISTS perevody (
+            fraza TEXT NOT NULL,
+            yazyk TEXT NOT NULL,
+            perevod TEXT NOT NULL,
+            PRIMARY KEY (fraza, yazyk)
+        )
+    """)
+    soedinenie.commit()
+    soedinenie.close()
+
+
+def sozdat_tablicu_sessiy():
+    soedinenie = sqlite3.connect(BAZA)
+    kursor = soedinenie.cursor()
+    kursor.execute("""
+        CREATE TABLE IF NOT EXISTS sessii (
+            hash_tokena TEXT PRIMARY KEY,
+            login TEXT NOT NULL,
+            istekaet REAL NOT NULL
+        )
+    """)
+    kursor.execute("""
+        CREATE TABLE IF NOT EXISTS popytki_vhoda (
+            klyuch TEXT PRIMARY KEY,
+            skolko INTEGER NOT NULL,
+            do_kogda REAL NOT NULL
+        )
+    """)
+    soedinenie.commit()
+    soedinenie.close()
+
+
 def sdelat_hash(parol, sol):
-    return hashlib.sha256((parol + sol).encode()).hexdigest()
+    """Медленный хеш. Подбор перебором становится невыгодным."""
+    return hashlib.pbkdf2_hmac(
+        "sha256",
+        parol.encode("utf-8"),
+        bytes.fromhex(sol),
+        ITERACIY
+    ).hex()
 
 
 def dobavit_igroka(login, parol):
+    if len(parol) < 6 or len(parol) > 128:
+        return False
+
     sol = secrets.token_hex(16)
     hash_parolya = sdelat_hash(parol, sol)
 
@@ -161,12 +232,252 @@ def proverit_parol(login, parol):
     soedinenie.close()
 
     if stroka is None:
+        sdelat_hash(parol, secrets.token_hex(16))
         return False
-    return sdelat_hash(parol, stroka[1]) == stroka[0]
+
+    nash = sdelat_hash(parol, stroka[1])
+    return secrets.compare_digest(nash, stroka[0])
+
+
+def hash_tokena(token):
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()
+
+
+def sozdat_sessiyu(login):
+    """Создаёт случайный токен. В базе хранится только его хеш."""
+    token = secrets.token_urlsafe(32)
+
+    soedinenie = sqlite3.connect(BAZA)
+    kursor = soedinenie.cursor()
+    kursor.execute(
+        "INSERT INTO sessii (hash_tokena, login, istekaet) VALUES (?, ?, ?)",
+        (hash_tokena(token), login, time.time() + SROK_SESSII)
+    )
+    kursor.execute("DELETE FROM sessii WHERE istekaet < ?", (time.time(),))
+    soedinenie.commit()
+    soedinenie.close()
+
+    return token
+
+
+def login_po_tokenu(token):
+    """Возвращает логин или None. Единственный способ узнать, кто это."""
+    if not token or len(token) > 200:
+        return None
+
+    soedinenie = sqlite3.connect(BAZA)
+    kursor = soedinenie.cursor()
+    kursor.execute(
+        "SELECT login, istekaet FROM sessii WHERE hash_tokena = ?",
+        (hash_tokena(token),)
+    )
+    stroka = kursor.fetchone()
+    soedinenie.close()
+
+    if stroka is None:
+        return None
+
+    if stroka[1] < time.time():
+        udalit_sessiyu(token)
+        return None
+
+    return stroka[0]
+
+
+def udalit_sessiyu(token):
+    if not token:
+        return
+    soedinenie = sqlite3.connect(BAZA)
+    kursor = soedinenie.cursor()
+    kursor.execute("DELETE FROM sessii WHERE hash_tokena = ?", (hash_tokena(token),))
+    soedinenie.commit()
+    soedinenie.close()
+
+
+def proverit_popytki(klyuch, limit, okno_sekund):
+    """Возвращает False, если лимит исчерпан."""
+    seychas = time.time()
+
+    soedinenie = sqlite3.connect(BAZA)
+    kursor = soedinenie.cursor()
+
+    kursor.execute("DELETE FROM popytki_vhoda WHERE do_kogda < ?", (seychas,))
+
+    kursor.execute("SELECT skolko FROM popytki_vhoda WHERE klyuch = ?", (klyuch,))
+    stroka = kursor.fetchone()
+
+    if stroka is None:
+        kursor.execute(
+            "INSERT INTO popytki_vhoda (klyuch, skolko, do_kogda) VALUES (?, ?, ?)",
+            (klyuch, 1, seychas + okno_sekund)
+        )
+        soedinenie.commit()
+        soedinenie.close()
+        return True
+
+    if stroka[0] >= limit:
+        soedinenie.close()
+        return False
+
+    kursor.execute(
+        "UPDATE popytki_vhoda SET skolko = skolko + 1 WHERE klyuch = ?",
+        (klyuch,)
+    )
+    soedinenie.commit()
+    soedinenie.close()
+    return True
+
+
+def sbrosit_popytki(klyuch):
+    soedinenie = sqlite3.connect(BAZA)
+    kursor = soedinenie.cursor()
+    kursor.execute("DELETE FROM popytki_vhoda WHERE klyuch = ?", (klyuch,))
+    soedinenie.commit()
+    soedinenie.close()
+
+
+def sozdat_profil(login, yazyk="ru"):
+    if yazyk not in YAZYKI:
+        yazyk = "ru"
+
+    soedinenie = sqlite3.connect(BAZA)
+    kursor = soedinenie.cursor()
+    kursor.execute(
+        "INSERT OR IGNORE INTO profili (login, yazyk) VALUES (?, ?)",
+        (login, yazyk)
+    )
+    soedinenie.commit()
+    soedinenie.close()
+
+
+def poluchit_profil(login):
+    sozdat_profil(login)
+
+    soedinenie = sqlite3.connect(BAZA)
+    kursor = soedinenie.cursor()
+    kursor.execute(
+        "SELECT yazyk, avatar, igr, pobed, ochkov_vsego FROM profili WHERE login = ?",
+        (login,)
+    )
+    stroka = kursor.fetchone()
+    soedinenie.close()
+
+    if stroka is None:
+        return {"yazyk": "ru", "avatar": None, "igr": 0, "pobed": 0, "ochkov_vsego": 0}
+
+    return {
+        "yazyk": stroka[0],
+        "avatar": stroka[1],
+        "igr": stroka[2],
+        "pobed": stroka[3],
+        "ochkov_vsego": stroka[4]
+    }
+
+
+def ustanovit_yazyk(login, yazyk):
+    if yazyk not in YAZYKI:
+        return
+    sozdat_profil(login)
+
+    soedinenie = sqlite3.connect(BAZA)
+    kursor = soedinenie.cursor()
+    kursor.execute("UPDATE profili SET yazyk = ? WHERE login = ?", (yazyk, login))
+    soedinenie.commit()
+    soedinenie.close()
+
+
+def ustanovit_avatar(login, imya_fayla):
+    sozdat_profil(login)
+
+    soedinenie = sqlite3.connect(BAZA)
+    kursor = soedinenie.cursor()
+    kursor.execute("UPDATE profili SET avatar = ? WHERE login = ?", (imya_fayla, login))
+    soedinenie.commit()
+    soedinenie.close()
+
+
+def avatary_igrokov(kod):
+    igroki = poluchit_igrokov(kod)
+    itog = {}
+
+    soedinenie = sqlite3.connect(BAZA)
+    kursor = soedinenie.cursor()
+
+    for igrok in igroki:
+        kursor.execute("SELECT avatar FROM profili WHERE login = ?", (igrok["login"],))
+        stroka = kursor.fetchone()
+        if stroka and stroka[0]:
+            itog[igrok["login"]] = stroka[0]
+
+    soedinenie.close()
+    return itog
+
+
+def zapisat_rezultaty(kod):
+    soedinenie = sqlite3.connect(BAZA)
+    kursor = soedinenie.cursor()
+
+    kursor.execute("SELECT kod FROM zapisannye WHERE kod = ?", (kod,))
+    if kursor.fetchone() is not None:
+        soedinenie.close()
+        return
+
+    kursor.execute("INSERT INTO zapisannye (kod) VALUES (?)", (kod,))
+    soedinenie.commit()
+    soedinenie.close()
+
+    tablica = tablica_pobediteley(kod)
+
+    for igrok in tablica:
+        sozdat_profil(igrok["login"])
+
+        soedinenie = sqlite3.connect(BAZA)
+        kursor = soedinenie.cursor()
+
+        pobeda = 1 if igrok["mesto"] == 1 else 0
+        kursor.execute(
+            "UPDATE profili SET igr = igr + 1, pobed = pobed + ?, "
+            "ochkov_vsego = ochkov_vsego + ? WHERE login = ?",
+            (pobeda, igrok["ochki"], igrok["login"])
+        )
+
+        soedinenie.commit()
+        soedinenie.close()
+
+
+def ochistit_zapis(kod):
+    soedinenie = sqlite3.connect(BAZA)
+    kursor = soedinenie.cursor()
+    kursor.execute("DELETE FROM zapisannye WHERE kod = ?", (kod,))
+    soedinenie.commit()
+    soedinenie.close()
+
+
+def vzyat_perevod(fraza, yazyk):
+    soedinenie = sqlite3.connect(BAZA)
+    kursor = soedinenie.cursor()
+    kursor.execute(
+        "SELECT perevod FROM perevody WHERE fraza = ? AND yazyk = ?",
+        (fraza, yazyk)
+    )
+    stroka = kursor.fetchone()
+    soedinenie.close()
+    return stroka[0] if stroka else None
+
+
+def sohranit_perevod(fraza, yazyk, perevod):
+    soedinenie = sqlite3.connect(BAZA)
+    kursor = soedinenie.cursor()
+    kursor.execute(
+        "INSERT OR REPLACE INTO perevody (fraza, yazyk, perevod) VALUES (?, ?, ?)",
+        (fraza, yazyk, perevod)
+    )
+    soedinenie.commit()
+    soedinenie.close()
 
 
 def pridumat_kod():
-    return "".join(random.choice(ALFAVIT) for _ in range(5))
+    return "".join(secrets.choice(ALFAVIT) for _ in range(5))
 
 
 def sozdat_komnatu(login, koloda="omut", publichnaya=False):
@@ -197,7 +508,6 @@ def sozdat_komnatu(login, koloda="omut", publichnaya=False):
 
 
 def nayti_publichnuyu(koloda, login):
-    """Ищет открытую публичную комнату с этой колодой, где есть место."""
     if koloda not in KOLODY:
         return None
 
@@ -237,7 +547,6 @@ def komnata_publichnaya(kod):
 
 
 def skolko_igraet_publichno(koloda):
-    """Сколько человек сейчас в публичных комнатах этой колоды."""
     soedinenie = sqlite3.connect(BAZA)
     kursor = soedinenie.cursor()
     kursor.execute(
@@ -306,6 +615,15 @@ def poluchit_igrokov(kod):
     stroki = kursor.fetchall()
     soedinenie.close()
     return [{"login": s[0], "ochki": s[1], "gotov": s[2] == 1} for s in stroki]
+
+
+def igrok_v_komnate(kod, login):
+    if login is None:
+        return False
+    for igrok in poluchit_igrokov(kod):
+        if igrok["login"] == login:
+            return True
+    return False
 
 
 def poluchit_ochki_igroka(kod, login):
@@ -466,7 +784,6 @@ def vygnat_igroka(kod, login):
     soedinenie.commit()
     soedinenie.close()
 
-    # Если ушёл хозяин, назначаем первого оставшегося
     if poluchit_hozyaina(kod) == login:
         ostalis = poluchit_igrokov(kod)
         if len(ostalis) > 0:
@@ -488,7 +805,6 @@ def novaya_partiya(kod):
 
 
 def spisok_vseh_kart(koloda):
-    """Возвращает пути вида omut/card_001.jpg"""
     if koloda not in KOLODY:
         koloda = "omut"
 
@@ -878,187 +1194,3 @@ def tablica_pobediteley(kod):
         igrok["mesto"] = mesto
 
     return igroki
-
-PAPKA_AVATAROV = os.path.join("static", "avatars")
-YAZYKI = ["ru", "en", "es", "de", "fr", "zh"]
-
-
-def sozdat_tablicu_profilya():
-    soedinenie = sqlite3.connect(BAZA)
-    kursor = soedinenie.cursor()
-
-    kursor.execute("""
-        CREATE TABLE IF NOT EXISTS profili (
-            login TEXT PRIMARY KEY,
-            yazyk TEXT NOT NULL DEFAULT 'ru',
-            avatar TEXT,
-            igr INTEGER NOT NULL DEFAULT 0,
-            pobed INTEGER NOT NULL DEFAULT 0,
-            ochkov_vsego INTEGER NOT NULL DEFAULT 0
-        )
-    """)
-
-    kursor.execute("""
-        CREATE TABLE IF NOT EXISTS zapisannye (
-            kod TEXT PRIMARY KEY
-        )
-    """)
-
-    soedinenie.commit()
-    soedinenie.close()
-
-
-def sozdat_profil(login, yazyk="ru"):
-    if yazyk not in YAZYKI:
-        yazyk = "ru"
-
-    soedinenie = sqlite3.connect(BAZA)
-    kursor = soedinenie.cursor()
-    kursor.execute(
-        "INSERT OR IGNORE INTO profili (login, yazyk) VALUES (?, ?)",
-        (login, yazyk)
-    )
-    soedinenie.commit()
-    soedinenie.close()
-
-
-def poluchit_profil(login):
-    sozdat_profil(login)
-
-    soedinenie = sqlite3.connect(BAZA)
-    kursor = soedinenie.cursor()
-    kursor.execute(
-        "SELECT yazyk, avatar, igr, pobed, ochkov_vsego FROM profili WHERE login = ?",
-        (login,)
-    )
-    stroka = kursor.fetchone()
-    soedinenie.close()
-
-    if stroka is None:
-        return {"yazyk": "ru", "avatar": None, "igr": 0, "pobed": 0, "ochkov_vsego": 0}
-
-    return {
-        "yazyk": stroka[0],
-        "avatar": stroka[1],
-        "igr": stroka[2],
-        "pobed": stroka[3],
-        "ochkov_vsego": stroka[4]
-    }
-
-
-def ustanovit_yazyk(login, yazyk):
-    if yazyk not in YAZYKI:
-        return
-    sozdat_profil(login)
-
-    soedinenie = sqlite3.connect(BAZA)
-    kursor = soedinenie.cursor()
-    kursor.execute("UPDATE profili SET yazyk = ? WHERE login = ?", (yazyk, login))
-    soedinenie.commit()
-    soedinenie.close()
-
-
-def ustanovit_avatar(login, imya_fayla):
-    sozdat_profil(login)
-
-    soedinenie = sqlite3.connect(BAZA)
-    kursor = soedinenie.cursor()
-    kursor.execute("UPDATE profili SET avatar = ? WHERE login = ?", (imya_fayla, login))
-    soedinenie.commit()
-    soedinenie.close()
-
-
-def avatary_igrokov(kod):
-    """Возвращает словарь логин -> имя файла аватара."""
-    igroki = poluchit_igrokov(kod)
-    itog = {}
-
-    soedinenie = sqlite3.connect(BAZA)
-    kursor = soedinenie.cursor()
-
-    for igrok in igroki:
-        kursor.execute("SELECT avatar FROM profili WHERE login = ?", (igrok["login"],))
-        stroka = kursor.fetchone()
-        if stroka and stroka[0]:
-            itog[igrok["login"]] = stroka[0]
-
-    soedinenie.close()
-    return itog
-
-
-def zapisat_rezultaty(kod):
-    """Записывает статистику партии. Только один раз на комнату."""
-    soedinenie = sqlite3.connect(BAZA)
-    kursor = soedinenie.cursor()
-
-    kursor.execute("SELECT kod FROM zapisannye WHERE kod = ?", (kod,))
-    if kursor.fetchone() is not None:
-        soedinenie.close()
-        return
-
-    kursor.execute("INSERT INTO zapisannye (kod) VALUES (?)", (kod,))
-    soedinenie.commit()
-    soedinenie.close()
-
-    tablica = tablica_pobediteley(kod)
-
-    for igrok in tablica:
-        sozdat_profil(igrok["login"])
-
-        soedinenie = sqlite3.connect(BAZA)
-        kursor = soedinenie.cursor()
-
-        pobeda = 1 if igrok["mesto"] == 1 else 0
-        kursor.execute(
-            "UPDATE profili SET igr = igr + 1, pobed = pobed + ?, "
-            "ochkov_vsego = ochkov_vsego + ? WHERE login = ?",
-            (pobeda, igrok["ochki"], igrok["login"])
-        )
-
-        soedinenie.commit()
-        soedinenie.close()
-
-
-def ochistit_zapis(kod):
-    soedinenie = sqlite3.connect(BAZA)
-    kursor = soedinenie.cursor()
-    kursor.execute("DELETE FROM zapisannye WHERE kod = ?", (kod,))
-    soedinenie.commit()
-    soedinenie.close()
-
-def sozdat_tablicu_perevodov():
-    soedinenie = sqlite3.connect(BAZA)
-    kursor = soedinenie.cursor()
-    kursor.execute("""
-        CREATE TABLE IF NOT EXISTS perevody (
-            fraza TEXT NOT NULL,
-            yazyk TEXT NOT NULL,
-            perevod TEXT NOT NULL,
-            PRIMARY KEY (fraza, yazyk)
-        )
-    """)
-    soedinenie.commit()
-    soedinenie.close()
-
-
-def vzyat_perevod(fraza, yazyk):
-    soedinenie = sqlite3.connect(BAZA)
-    kursor = soedinenie.cursor()
-    kursor.execute(
-        "SELECT perevod FROM perevody WHERE fraza = ? AND yazyk = ?",
-        (fraza, yazyk)
-    )
-    stroka = kursor.fetchone()
-    soedinenie.close()
-    return stroka[0] if stroka else None
-
-
-def sohranit_perevod(fraza, yazyk, perevod):
-    soedinenie = sqlite3.connect(BAZA)
-    kursor = soedinenie.cursor()
-    kursor.execute(
-        "INSERT OR REPLACE INTO perevody (fraza, yazyk, perevod) VALUES (?, ?, ?)",
-        (fraza, yazyk, perevod)
-    )
-    soedinenie.commit()
-    soedinenie.close()

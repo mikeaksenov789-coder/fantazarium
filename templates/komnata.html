@@ -19,14 +19,14 @@
 
     <div class="container">
         <p class="nadzagolovok" id="tip-komnaty"></p>
-        <h2 data-t="komnata">Комната</h2>
+        <h2>Комната</h2>
 
         <div class="plashka-koloda" id="plashka-koloda"></div>
 
         <div class="kod-komnaty" id="kod">.....</div>
         <button class="knopka-kopirovat" onclick="skopirovat()" id="knopka-kopii"></button>
 
-        <h3 class="zagolovok-spiska" data-t="igroki">Игроки</h3>
+        <h3 class="zagolovok-spiska">Игроки</h3>
 
         <div class="spisok-igrokov" id="spisok"></div>
 
@@ -34,7 +34,7 @@
 
         <div class="knopki" id="mesto-knopki"></div>
 
-        <a href="/lobbi" class="ssylka-nazad" data-t="vyyti">Выйти</a>
+        <a href="/lobbi" class="ssylka-nazad">Выйти</a>
     </div>
 
     <script>
@@ -53,11 +53,21 @@
         }
 
         async function obnovit() {
-            const otvet = await fetch("/api/komnata/" + kod);
-            const d = await otvet.json();
+            let d;
+            try {
+                const otvet = await fetch("/api/komnata/" + kod);
+                d = await otvet.json();
+            } catch (e) {
+                return;
+            }
 
             if (d.oshibka) {
                 document.getElementById("spisok").innerHTML = "<p>" + t("oshibka_kod") + "</p>";
+                return;
+            }
+
+            if (d.ya === null || d.ya === undefined) {
+                window.location.href = "/vhod";
                 return;
             }
 
@@ -79,7 +89,7 @@
 
                 html += "<div class='" + klass + "'>";
                 html += "<div class='levaya-igroka'>";
-                html += "<span class='imya-v-spiske'>" + igrok.login + "</span>";
+                html += "<span class='imya-v-spiske'>" + ekran(igrok.login) + "</span>";
                 if (igrok.login === d.hozyain) {
                     html += "<span class='metka-hozyain'>" + t("hozyain") + "</span>";
                 }
@@ -116,7 +126,7 @@
 
             if (d.ya === d.hozyain && skolko >= 4 && d.vse_gotovy) {
                 knopka += "<form method='post' action='/nachat_igru'>" +
-                          "<input type='hidden' name='kod' value='" + kod + "'>" +
+                          "<input type='hidden' name='kod' value='" + ekran(kod) + "'>" +
                           "<button type='submit' class='knopka knopka-glavnaya'>" +
                           t("nachat_igru") + "</button></form>";
             }

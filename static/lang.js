@@ -392,3 +392,13 @@ if (YAZYK !== "ru") {
         return staryy_confirm(perevesti(soobshenie));
     };
 }
+
+function ekran(tekst) {
+    if (tekst === null || tekst === undefined) { return ""; }
+    return String(tekst)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+}
